@@ -87,6 +87,8 @@ public static partial class RegionPolicy
 
     public static RegionSignals ReadWindowsSignals()
     {
+        if (!OperatingSystem.IsWindows()) return ReadUnixSignals();
+
         var geoName = TryReadGeoName(out var geoAvailable);
         var languages = TryReadPreferredUiLanguages(out var languagesAvailable);
         var locale = TryReadUserLocale(out var localeAvailable);
@@ -249,6 +251,38 @@ public static partial class RegionPolicy
         {
             return null;
         }
+    }
+
+    /// <summary>Unix 信号采集：locale 环境变量 + IANA 时区，无 GeoName/设备区域。</summary>
+    private static RegionSignals ReadUnixSignals()
+    {
+        // POSIX locale 优先级：LC_ALL > LC_MESSAGES > LANG，格式如 zh_CN.UTF-8
+        var locale = Environment.GetEnvironmentVariable("LC_ALL")
+                     ?? Environment.GetEnvironmentVariable("LC_MESSAGES")
+                     ?? Environment.GetEnvironmentVariable("LANG");
+        // 剥离编码后缀（zh_CN.UTF-8 → zh_CN），使其可被 CultureInfo 解析
+        if (!string.IsNullOrEmpty(locale))
+        {
+            var dot = locale.IndexOf('.');
+            if (dot > 0) locale = locale[..dot];
+        }
+
+        string? timeZone = null;
+        try
+        {
+            timeZone = TimeZoneInfo.Local.Id;
+        }
+        catch
+        {
+            // 时区不可用时留空
+        }
+
+        return new RegionSignals(
+            GeoName: null, GeoNameAvailable: false,
+            PreferredUiLanguages: [], PreferredUiLanguagesAvailable: false,
+            UserLocaleName: string.IsNullOrEmpty(locale) ? null : locale,
+            UserLocaleAvailable: !string.IsNullOrEmpty(locale),
+            TimeZoneId: timeZone, TimeZoneAvailable: !string.IsNullOrEmpty(timeZone));
     }
 
     private static int? TryReadDeviceRegion(out bool available)

@@ -12,11 +12,16 @@ public sealed record JavaInstallation(
     bool Is64Bit,
     bool IsJre)
 {
-    public string JavaExePath => Path.Combine(JavaFolder, "java.exe");
+    /// <summary>Java 可执行文件名：Windows 为 java.exe（启动用 javaw.exe），Unix 为 java。</summary>
+    public static string JavaExecutableName { get; } = OperatingSystem.IsWindows() ? "java.exe" : "java";
+
+    public string JavaExePath => Path.Combine(JavaFolder, JavaExecutableName);
+
     public string? JavawExePath
     {
         get
         {
+            if (!OperatingSystem.IsWindows()) return null; // Unix 无 javaw，统一用 java
             var javaw = Path.Combine(JavaFolder, "javaw.exe");
             return File.Exists(javaw) ? javaw : null;
         }

@@ -77,6 +77,9 @@ public class DefaultPathsScanner : IJavaScanner
                 roots.Add(programFiles);
             if (!string.IsNullOrEmpty(programFilesX86) && Directory.Exists(programFilesX86))
                 roots.Add(programFilesX86);
+
+            // Unix 标准位置（与 UnixJavaScanner 互补；BFS 深度限制保证不会过深）
+            roots.Add("/usr/lib/jvm");
         }
 
         return roots;
@@ -98,7 +101,7 @@ public class DefaultPathsScanner : IJavaScanner
             {
                 foreach (var subDir in Directory.EnumerateDirectories(current))
                 {
-                    var javaExe = Path.Combine(subDir, "java.exe");
+                    var javaExe = Path.Combine(subDir, JavaConsts.JavaExecutableName);
                     if (File.Exists(javaExe))
                     {
                         results.Add(javaExe);

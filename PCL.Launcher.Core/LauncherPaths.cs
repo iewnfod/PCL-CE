@@ -12,32 +12,44 @@ public static class LauncherPaths
     public const string ImageRoot =
         "pack://application:,,,/Plain Craft Launcher 2;component/Images/";
 
-    /// <summary>程序可执行文件所在目录，以“\”结尾。</summary>
+    private static readonly char DirSep = System.IO.Path.DirectorySeparatorChar;
+
+    /// <summary>程序可执行文件所在目录，以目录分隔符结尾。</summary>
     public static string ExecutableDirectory { get; } =
-        Basics.ExecutableDirectory.EndsWith('\\')
-            ? Basics.ExecutableDirectory
-            : Basics.ExecutableDirectory + "\\";
+        EnsureTrailingSeparator(Basics.ExecutableDirectory, DirSep);
 
-    /// <summary>临时目录，以“\”结尾。</summary>
-    public static string Temp => Paths.Temp + "\\";
+    /// <summary>临时目录，以目录分隔符结尾。</summary>
+    public static string Temp => EnsureTrailingSeparator(Paths.Temp, DirSep);
 
-    /// <summary>可用于临时存放文件的、不含特殊字符的目录，以“\”结尾。</summary>
+    /// <summary>可用于临时存放文件的、不含特殊字符的目录，以目录分隔符结尾。</summary>
     public static string PureAsciiDirectory
     {
         get
         {
-            if (ExecutableDirectory.All(c => c < 128))
-                return Path.Combine(ExecutableDirectory, "PCL") + "\\";
-            var temp = Path.GetTempPath();
-            if (temp.All(c => c < 128))
-                return temp.EndsWith('\\') ? temp : temp + "\\";
-            return Path.Combine(
-                Path.GetPathRoot(Environment.SystemDirectory) ?? "C:\\",
-                "ProgramData",
-                "PCL");
+            if (OperatingSystem.IsWindows())
+            {
+                if (ExecutableDirectory.All(c => c < 128))
+                    return EnsureTrailingSeparator(System.IO.Path.Combine(ExecutableDirectory, "PCL"), DirSep);
+                var temp = System.IO.Path.GetTempPath();
+                if (temp.All(c => c < 128))
+                    return EnsureTrailingSeparator(temp, DirSep);
+                return System.IO.Path.Combine(
+                    System.IO.Path.GetPathRoot(Environment.SystemDirectory) ?? "C:\\",
+                    "ProgramData",
+                    "PCL");
+            }
+
+            // Unix：文件系统与 Java 均以 UTF-8 处理路径，无 8.3/GBK 短路径问题，
+            // 临时性辅助文件（JavaWrapper/authlib-injector 等）直接放系统临时目录。
+            return EnsureTrailingSeparator(System.IO.Path.GetTempPath(), DirSep);
         }
     }
 
-    /// <summary>当前 Minecraft 文件夹路径，由 WPF 宿主同步设置。</summary>
+    /// <summary>当前 Minecraft 文件夹路径，由 UI 宿主同步设置。</summary>
     public static string? MinecraftFolder { get; set; }
+
+    private static string EnsureTrailingSeparator(string path, char separator) =>
+        string.IsNullOrEmpty(path) || path.EndsWith(separator)
+            ? path
+            : path + separator;
 }

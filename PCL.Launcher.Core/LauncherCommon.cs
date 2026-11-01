@@ -401,6 +401,9 @@ public static class LauncherCommon
 
     public static string ShortenPath(string longPath, int shortenThreshold = 247)
     {
+        // 8.3 短路径是 Windows FAT 遗留机制；Unix 文件系统无路径长度限制，直接返回原路径
+        if (!OperatingSystem.IsWindows()) return longPath;
+
         if (longPath.Length <= shortenThreshold) return longPath;
 
         var shortPath = new StringBuilder(260);

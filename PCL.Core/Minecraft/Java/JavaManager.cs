@@ -171,8 +171,19 @@ public class JavaManager
     private static bool _ShouldEnableByDefault(JavaInstallation inst)
     {
         var libDir = Path.Combine(Directory.GetParent(inst.JavaFolder)!.FullName, "lib");
-        var isUsable = (!inst.IsJre && File.Exists(Path.Combine(libDir, "jvm.lib"))) ||
+        bool isUsable;
+        if (OperatingSystem.IsWindows())
+        {
+            isUsable = (!inst.IsJre && File.Exists(Path.Combine(libDir, "jvm.lib"))) ||
                        (inst.IsJre && File.Exists(Path.Combine(libDir, "rt.jar")));
+        }
+        else
+        {
+            // Unix：JDK/JRE 的 lib 下应存在 JVM 共享库（lib/server/libjvm.so 或 lib/libjvm.so）
+            isUsable = File.Exists(Path.Combine(libDir, "server", "libjvm.so")) ||
+                       File.Exists(Path.Combine(libDir, "libjvm.so")) ||
+                       File.Exists(Path.Combine(libDir, "jli", "libjli.so"));
+        }
 
         return !((inst.IsJre && inst.MajorVersion > 8) ||
                  (inst.Is64Bit ^ Environment.Is64BitOperatingSystem) ||

@@ -1,6 +1,12 @@
+using System;
+
 namespace PCL.Core.Minecraft.Java;
 public class JavaConsts
 {
+    /// <summary>当前平台的 Java 可执行文件名（java.exe / java）。</summary>
+    public static readonly string JavaExecutableName =
+        OperatingSystem.IsWindows() ? "java.exe" : "java";
+
     public static readonly string[] ExcludeFolderNames = ["javapath", "java8path", "common files", "netease"];
 
     public static readonly string[] MostPossibleKeywords =

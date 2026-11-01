@@ -14,16 +14,25 @@ namespace PCL.Core.Test
         [TestMethod]
         public async Task TestJavaSearch()
         {
-            // Java 搜索是否稳定
+            // Java 搜索是否稳定（按平台装配，与 JavaService 一致）
+            var isWindows = OperatingSystem.IsWindows();
             var jas = new JavaManager(
-                new PeHeaderParser(),
-                [
-                new RegistryJavaScanner(),
-                new DefaultPathsScanner(),
-                new PathEnvironmentScanner(),
-                new MicrosoftStoreJavaScanner(),
-                new WhereCommandScanner()
-            ]);
+                isWindows ? new PeHeaderParser() : new UnixJavaParser(),
+                isWindows
+                    ?
+                    [
+                        new RegistryJavaScanner(),
+                        new DefaultPathsScanner(),
+                        new PathEnvironmentScanner(),
+                        new MicrosoftStoreJavaScanner(),
+                        new WhereCommandScanner()
+                    ]
+                    :
+                    [
+                        new UnixJavaScanner(),
+                        new DefaultPathsScanner(),
+                        new PathEnvironmentScanner()
+                    ]);
             await jas.ScanJavaAsync();
             var firstSacnned = jas.GetSortedJavaList();
             foreach (var ja in firstSacnned)

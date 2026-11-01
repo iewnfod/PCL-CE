@@ -27,6 +27,9 @@ public static partial class GameWatcher
 
         private void TimerWindow()
         {
+            // 窗口枚举依赖 Win32（EnumWindows）；Unix 下降级为纯日志进度监控
+            if (!OperatingSystem.IsWindows()) return;
+
             try
             {
                 if (gameProcess.HasExited || _isWindowFinished)

@@ -4,7 +4,7 @@
 
 > Maintained by Lumina Code from the session's task reports — manual edits are overwritten.
 
-- [ ] 核心层多目标编译验证
+- [x] 核心层多目标编译验证
 - [ ] 核心层 Linux 服务适配
 - [ ] Avalonia 壳与应用骨架
 - [ ] 启动游戏端到端

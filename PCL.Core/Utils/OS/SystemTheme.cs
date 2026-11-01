@@ -15,6 +15,21 @@ public class SystemTheme {
     /// </summary>
     /// <returns>如果系统使用深色模式，则返回 true；否则返回 false（包括注册表不可访问的情况）。</returns>
     public static bool IsSystemInDarkMode() {
+        if (!OperatingSystem.IsWindows()) {
+            // Unix：优先读 GNOME 的 color-scheme（prefer-dark 即深色），失败视为浅色
+            try {
+                var psi = new System.Diagnostics.ProcessStartInfo("gsettings", "get org.gnome.desktop.interface color-scheme") {
+                    RedirectStandardOutput = true, UseShellExecute = false, CreateNoWindow = true
+                };
+                using var process = System.Diagnostics.Process.Start(psi);
+                var output = process?.StandardOutput.ReadToEnd().Trim('\'', '\"', ' ', '\n', '\r');
+                process?.WaitForExit(2000);
+                return string.Equals(output, "prefer-dark", StringComparison.OrdinalIgnoreCase);
+            } catch (Exception ex) {
+                LogWrapper.Warn(ex, "无法读取系统主题设置（gsettings）");
+                return false;
+            }
+        }
         try {
             using var registryKey = Registry.CurrentUser.OpenSubKey(ThemeRegistryPath);
             if (registryKey is null) {

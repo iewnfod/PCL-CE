@@ -11,6 +11,8 @@ public class MicrosoftStoreJavaScanner : IJavaScanner
 
     public void Scan(ICollection<string> results)
     {
+        if (!OperatingSystem.IsWindows()) return;
+
         try
         {
             var basePath = Path.Combine(
