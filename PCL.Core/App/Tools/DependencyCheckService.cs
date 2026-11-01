@@ -1,3 +1,4 @@
+using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text.Json;
@@ -17,6 +18,13 @@ public sealed partial class DependencyCheckService
     [LifecycleStart]
     private static async Task _StartAsync()
     {
+        // 依赖包检查基于 PowerShell Get-AppxPackage（Microsoft Store 包），仅 Windows ARM64/x64 有意义
+        if (!OperatingSystem.IsWindows())
+        {
+            Context.Info("非 Windows 平台，跳过依赖包检查");
+            return;
+        }
+
         Context.Info(Lang.Text("Tools.Test.Dependency.Checking"));
 
         if (RuntimeInformation.OSArchitecture.Equals(Architecture.Arm64))

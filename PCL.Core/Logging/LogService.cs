@@ -8,6 +8,7 @@ using PCL.Core.App.IoC;
 using PCL.Core.App.Localization;
 using PCL.Core.Platform;
 using PCL.Core.UI;
+using PCL.Core.UI.Hints;
 
 namespace PCL.Core.Logging;
 
@@ -89,6 +90,10 @@ public class LogService : ILifecycleLogService
 
             // hint
             case ActionLevel.Hint or ActionLevel.HintErr:
+                // 无呈现器（壳未注册/非 UI 阶段）时降级为纯日志：
+                // 否则每条 Warning（默认 ActionLevel 为 HintErr）都会入队 hint、被丢弃、
+                // 再产生一条丢弃 Warning，形成指数级日志风暴
+                if (HintService.Instance.Presenter is null) return;
                 HintWrapper.Show(
                     plain,
                     actionLevel == ActionLevel.Hint ? HintTheme.Info : HintTheme.Error);

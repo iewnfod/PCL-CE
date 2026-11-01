@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>WinExe</OutputType>
+        <TargetFramework>net10.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <LangVersion>14.0</LangVersion>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <RootNamespace>PCL.Avalonia</RootNamespace>
+        <AssemblyName>PCL.CE.Avalonia</AssemblyName>
+        <AssemblyTitle>Plain Craft Launcher CE (Avalonia)</AssemblyTitle>
+        <Description>Minecraft 启动器跨平台 UI（Avalonia 壳）</Description>
+        <InvariantGlobalization>false</InvariantGlobalization>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="Avalonia" Version="11.3.2" />
+        <PackageReference Include="Avalonia.Desktop" Version="11.3.2" />
+        <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.2" />
+        <PackageReference Include="Avalonia.Diagnostics" Version="11.3.2" Condition="'$(Configuration)' == 'Debug'" />
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\PCL.Core\PCL.Core.csproj" />
+        <ProjectReference Include="..\PCL.Launcher.Core\PCL.Launcher.Core.csproj" />
+    </ItemGroup>
+    <ItemGroup>
+        <!-- Basics.Metadata 从入口程序集读取 PCL.metadata.json 资源 -->
+        <EmbeddedResource Include="metadata.json" LogicalName="PCL.metadata.json" />
+        <!-- 语言 XAML 作为资源打包，供 AvaloniaLocalizationBackend 解析 -->
+        <EmbeddedResource Include="..\PCL.Core.Wpf\App\Localization\Languages\zh-CN.xaml" Link="Languages\zh-CN.xaml" />
+    </ItemGroup>
+</Project>
