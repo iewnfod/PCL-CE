@@ -17,14 +17,14 @@
         <Platforms>AnyCPU;x64;ARM64</Platforms>
         <ProjectGuid>{A0C2209D-64FB-4C11-9459-8E86304B6F94}</ProjectGuid>
         <RootNamespace>PCL.Core</RootNamespace>
-        <TargetFramework>net10.0-windows</TargetFramework>
+        <TargetFrameworks>net10.0;net10.0-windows</TargetFrameworks>
         <EnableWindowsTargeting>true</EnableWindowsTargeting>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <LangVersion>14.0</LangVersion>
         <Nullable>enable</Nullable>
         <ErrorReport>prompt</ErrorReport>
         <WarningLevel>4</WarningLevel>
-        <OutputPath>bin\$(Configuration)-$(Platform)\</OutputPath>
+        <OutputPath>bin/$(Configuration)-$(Platform)/</OutputPath>
         <PlatformTarget>$(Platform)</PlatformTarget>
         <NoWarn>$(NoWarn);CS9113</NoWarn>
     </PropertyGroup>
@@ -46,13 +46,13 @@
     <ItemGroup>
         <!-- UI -->
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
-        <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.142" />
         <PackageReference Include="Wacton.Unicolour" Version="8.0.0" />
         <!-- 语言和系统特性 -->
         <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
-        <PackageReference Include="System.Management" Version="10.0.9" />
         <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.9" />
-        <PackageReference Include="PlainToolkit.CngProtectedData" Version="2.1.0" />
+        <!-- Windows 专属（运行时守卫，仅 windows 目标引用） -->
+        <PackageReference Condition="'$(TargetFramework)' == 'net10.0-windows'" Include="System.Management" Version="10.0.9" />
+        <PackageReference Condition="'$(TargetFramework)' == 'net10.0-windows'" Include="PlainToolkit.CngProtectedData" Version="2.1.0" />
         <!-- 归档文件 -->
         <PackageReference Include="SharpZipLib" Version="1.4.2" />
         <!-- 配置文件和数据库 -->
@@ -86,6 +86,10 @@
         <EnableDefaultNoneItems>false</EnableDefaultNoneItems>
         <EnableDefaultApplicationDefinition>false</EnableDefaultApplicationDefinition>
         <EnableDefaultPageItems>false</EnableDefaultPageItems>
+    </PropertyGroup>
+    <!-- WINDOWS 编译符号：仅 net10.0-windows 目标定义，用于隔离 Windows 专属实现 -->
+    <PropertyGroup Condition="'$(TargetFramework)' == 'net10.0-windows'">
+        <DefineConstants>$(DefineConstants);WINDOWS</DefineConstants>
     </PropertyGroup>
     <ItemGroup>
         <Compile Include="**\*.cs" Exclude="bin\**;obj\**;publish\**;**\*.g.cs;SourceGenerators\**" />

@@ -1,5 +1,7 @@
 using System;
+#if WINDOWS
 using System.Management;
+#endif
 using PCL.Core.App;
 using PCL.Core.Logging;
 using PCL.Core.Utils.Hash;
@@ -33,9 +35,10 @@ public static class IdentifyOld
 
     private static string? _GetCpuId()
     {
+#if WINDOWS
         try
         {
-            using var searcher = new ManagementObjectSearcher("SELECT ProcessorId FROM Win32_Processor");
+            using var searcher = new System.Management.ManagementObjectSearcher("SELECT ProcessorId FROM Win32_Processor");
             using var collection = searcher.Get();
 
             foreach (var item in collection)
@@ -44,7 +47,7 @@ public static class IdentifyOld
                 {
                     return item["ProcessorId"]?.ToString();
                 }
-                catch (ManagementException ex)
+                catch (System.Management.ManagementException ex)
                 {
                     LogWrapper.Warn("Identify", $"WMI属性读取失败: {ex.Message}");
                 }
@@ -57,7 +60,7 @@ public static class IdentifyOld
             LogWrapper.Warn("Identify", "未找到有效的CPU ID");
             return null;
         }
-        catch (ManagementException ex)
+        catch (System.Management.ManagementException ex)
         {
             LogWrapper.Error(ex, "Identify", $"WMI查询失败");
         }
@@ -75,6 +78,22 @@ public static class IdentifyOld
         }
 
         return null;
+#else
+        // 非 Windows：读取 /proc/cpuinfo 序列号（x86 通常不提供，ARM 有时提供）
+        try
+        {
+            foreach (var line in System.IO.File.ReadLines("/proc/cpuinfo"))
+            {
+                if (line.StartsWith("Serial", StringComparison.Ordinal) && line.Split(':', 2) is { Length: 2 } parts)
+                    return parts[1].Trim();
+            }
+        }
+        catch (Exception ex)
+        {
+            LogWrapper.Warn(ex, "Identify", "读取 /proc/cpuinfo 失败");
+        }
+        return null;
+#endif
     }
 
     public static string GetMachineId(string randomId)

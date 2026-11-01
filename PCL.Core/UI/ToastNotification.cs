@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 using System.Security;
+using PCL.Core.Logging;
 using PCL.Core.Utils.OS;
 using PCL.Core.Utils.WinRT;
 using PCL.Core.Utils.WinRT.Interface;
@@ -38,6 +39,13 @@ public static class ToastNotification
     /// <param name="xml">Toast 模板</param>
     public static unsafe void SendToastFromTemplate(string xml)
     {
+        // Toast 通知依赖 WinRT（combase），仅 Windows 可用；其他平台静默跳过
+        if (!OperatingSystem.IsWindows())
+        {
+            LogWrapper.Debug("Toast", "非 Windows 平台不支持系统 Toast 通知，已跳过");
+            return;
+        }
+
         // 定义 Toast 模板
         var toastXml = HStringHelper.ToHString(xml);
 
@@ -144,6 +152,8 @@ public static class ToastNotification
     /// </summary>
     public static void UninstallToasts()
     {
+        if (!OperatingSystem.IsWindows()) return;
+
         // TODO: 更改这里的逻辑
         AumidHelper.UnregisterAumid();
     }

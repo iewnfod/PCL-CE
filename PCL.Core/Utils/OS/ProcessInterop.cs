@@ -1,9 +1,13 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+#if WINDOWS
 using System.Management;
+#endif
 using System.Security;
+#if WINDOWS
 using System.Security.Principal;
+#endif
 using Microsoft.Win32;
 using PCL.Core.Logging;
 
@@ -15,7 +19,11 @@ public class ProcessInterop {
     /// </summary>
     /// <returns>如果当前用户具有管理员权限，则返回 true；否则返回 false。</returns>
     public static bool IsAdmin() =>
+#if WINDOWS
         new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
+#else
+        NativeMethods.geteuid() == 0;
+#endif
 
     /// <summary>
     /// 获取指定进程 ID 的命令行参数。
@@ -23,9 +31,19 @@ public class ProcessInterop {
     /// <param name="processId">进程 ID</param>
     /// <returns>命令行参数文本</returns>
     public static string? GetCommandLine(int processId) {
+#if WINDOWS
         var query = $"SELECT CommandLine FROM Win32_Process WHERE ProcessId = {processId}";
         using var searcher = new ManagementObjectSearcher(query);
         return searcher.Get().GetEnumerator().Current["CommandLine"].ToString();
+#else
+        try
+        {
+            // /proc/<pid>/cmdline 以 NUL 分隔参数
+            var raw = File.ReadAllText($"/proc/{processId}/cmdline");
+            return raw.Replace('\0', ' ').TrimEnd();
+        }
+        catch { return null; }
+#endif
     }
 
     /// <summary>
@@ -33,15 +51,19 @@ public class ProcessInterop {
     /// </summary>
     /// <param name="path">可执行文件路径</param>
     /// <param name="arguments">程序参数</param>
-    /// <param name="runAsAdmin">指定是否以管理员身份启动该进程</param>
+    /// <param name="runAsAdmin">指定是否以管理员身份启动该进程（仅 Windows；其他平台忽略并记录日志）</param>
     /// <returns>新的进程实例</returns>
     public static Process? Start(string path, string? arguments = null, bool runAsAdmin = false) {
         var psi = new ProcessStartInfo(path);
         if (arguments is not null) psi.Arguments = arguments;
         if (runAsAdmin)
         {
+#if WINDOWS
             psi.UseShellExecute = true;
             psi.Verb = "runas";
+#else
+            LogWrapper.Warn("System", "非 Windows 平台暂不支持以管理员身份启动进程，已按普通权限启动");
+#endif
         }
         if (Directory.Exists(path))
             psi.UseShellExecute = true;
@@ -77,8 +99,13 @@ public class ProcessInterop {
     /// <param name="force">指定是否强制结束，若为 <c>true</c> 将通过带 <c>/F</c> 参数的 <c>TASKKILL.EXE</c> 结束进程</param>
     /// <returns>进程返回值，若等待超时将返回 <see cref="int.MinValue"/></returns>
     public static int Kill(Process process, int timeout = 3000, bool force = false) {
+#if WINDOWS
         if (force) Process.Start(new ProcessStartInfo("TASKKILL.EXE", $"/PID {process.Id} /F") { UseShellExecute = false });
         else process.Kill();
+#else
+        // Unix：force 时连子进程树一起结束
+        process.Kill(entireProcessTree: force);
+#endif
         if (timeout == -1) process.WaitForExit();
         else if (timeout != 0) process.WaitForExit(timeout);
         return process.HasExited ? process.ExitCode : int.MinValue;
@@ -97,6 +124,12 @@ public class ProcessInterop {
         // 参数验证
         if (string.IsNullOrWhiteSpace(executable)) {
             throw new ArgumentException("可执行文件路径不能为空或仅包含空白字符", nameof(executable));
+        }
+
+        // 非 Windows：GPU 偏好由驱动/桌面环境管理，无注册表机制，直接跳过
+        if (!OperatingSystem.IsWindows()) {
+            LogWrapper.Debug("System", "非 Windows 平台不支持设置 GPU 偏好，已跳过");
+            return;
         }
 
         // 验证文件路径格式
@@ -223,3 +256,11 @@ public enum ProcessExitCode {
     /// </summary>
     AccessDenied = 5
 }
+
+#if !WINDOWS
+internal static partial class NativeMethods
+{
+    [System.Runtime.InteropServices.DllImport("libc", SetLastError = false)]
+    internal static extern uint geteuid();
+}
+#endif

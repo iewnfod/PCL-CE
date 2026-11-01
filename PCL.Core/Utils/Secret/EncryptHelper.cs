@@ -2,14 +2,16 @@ using PCL.Core.App;
 using PCL.Core.Logging;
 using PCL.Core.Utils.Encryption;
 using PCL.Core.Utils.Exts;
+#if WINDOWS
 using PlainToolkit.CngProtectedData;
+using DataProtectionScope = PlainToolkit.CngProtectedData.DataProtectionScope;
+#endif
 using System;
 using System.Buffers.Binary;
 using System.ComponentModel;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
-using DataProtectionScope = PlainToolkit.CngProtectedData.DataProtectionScope;
 
 
 namespace PCL.Core.Utils.Secret;
@@ -192,6 +194,10 @@ public static class EncryptHelper
         var data = EncryptionData.FromBytes(File.ReadAllBytes(keyFile));
         switch (data.Version)
         {
+            case 3:
+                // Unix keyfile：内容即密钥本体，依赖文件系统权限（0600）保护
+                return data.Data;
+#if WINDOWS
             case 2:
                 return CngProtectedData.Unprotect(data.Data, _Key, DataProtectionScope.CurrentUser);
             case 1:
@@ -199,6 +205,7 @@ public static class EncryptHelper
                 if (_TryProtect(legacyKey, out var migrated) && _WriteKeyFile(keyFile, migrated))
                     LogWrapper.Info("Encryption", $"用户密钥已迁移至 version 2（CNG DPAPI）：{keyFile}");
                 return legacyKey;
+#endif
             default:
                 throw new NotSupportedException($"Unsupported key version: {data.Version}");
         }
@@ -226,6 +233,7 @@ public static class EncryptHelper
     /// </summary>
     private static bool _TryProtect(byte[] rawKey, out byte[] storeData)
     {
+#if WINDOWS
         try
         {
             var blob = CngProtectedData.Protect(rawKey, _Key, DataProtectionScope.CurrentUser);
@@ -239,6 +247,11 @@ public static class EncryptHelper
             storeData = [];
             return false;
         }
+#else
+        // Unix：version 3 直接落盘密钥本体，由文件权限（0600）保护，无需系统密钥保护设施
+        storeData = EncryptionData.ToBytes(new EncryptionData { Version = 3, Data = rawKey });
+        return true;
+#endif
     }
 
     /// <summary>原子写入密钥文件（同目录临时文件 + 覆盖式移动）。</summary>
@@ -247,11 +260,21 @@ public static class EncryptHelper
         var tmpFile = $"{keyFile}.tmp{RandomUtils.NextInt(10000, 99999)}";
         try
         {
+#if WINDOWS
             using (var fs = new FileStream(tmpFile, FileMode.Create, FileAccess.ReadWrite, FileShare.None))
             {
                 fs.Write(storeData);
                 fs.Flush(true);
             }
+#else
+            // Unix：以属主可读写（0600）权限创建，避免密钥以默认权限暴露
+            using (var fs = new FileStream(tmpFile, FileMode.Create, FileAccess.ReadWrite, FileShare.None))
+            {
+                File.SetUnixFileMode(tmpFile, UnixFileMode.UserRead | UnixFileMode.UserWrite);
+                fs.Write(storeData);
+                fs.Flush(true);
+            }
+#endif
             File.Move(tmpFile, keyFile, true);
             return true;
         }

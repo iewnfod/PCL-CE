@@ -26,12 +26,14 @@ public class HttpProxyManager : IWebProxy, IDisposable
     private readonly WebProxy _systemWebProxy = new() { BypassProxyOnLocal = true };
     private const string ProxyRegPathFull = @"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Internet Settings";
     private const string ProxyRegPath = @"Software\Microsoft\Windows\CurrentVersion\Internet Settings";
-    private readonly RegistryChangeMonitor _proxyMonitor = new(ProxyRegPath);
+    // 注册表变更监控仅 Windows 可用；Unix 通过环境变量获取代理，不做变更监听
+    private readonly RegistryChangeMonitor? _proxyMonitor =
+        OperatingSystem.IsWindows() ? new RegistryChangeMonitor(ProxyRegPath) : null;
 
     private HttpProxyManager()
     {
         RefreshSystemProxy(); // 初始化系统代理
-        _proxyMonitor.Changed += _OnSystemProxyChanged;
+        if (_proxyMonitor is not null) _proxyMonitor.Changed += _OnSystemProxyChanged;
     }
 
     private void _OnSystemProxyChanged(object? sender, EventArgs e)
@@ -113,6 +115,24 @@ public class HttpProxyManager : IWebProxy, IDisposable
         {
             try
             {
+                if (!OperatingSystem.IsWindows())
+                {
+                    // Unix：读取标准代理环境变量（http_proxy / https_proxy / all_proxy，大小写不敏感）
+                    var proxyEnv =
+                        Environment.GetEnvironmentVariable("https_proxy") ??
+                        Environment.GetEnvironmentVariable("HTTPS_PROXY") ??
+                        Environment.GetEnvironmentVariable("http_proxy") ??
+                        Environment.GetEnvironmentVariable("HTTP_PROXY") ??
+                        Environment.GetEnvironmentVariable("all_proxy") ??
+                        Environment.GetEnvironmentVariable("ALL_PROXY");
+                    _systemWebProxy.Address = proxyEnv.IsNullOrWhiteSpace()
+                        ? null
+                        : new Uri(proxyEnv.Trim());
+                    LogWrapper.Info("Proxy",
+                        $"已从环境变量更新代理设置，代理状态：{_systemWebProxy.Address?.ToString() ?? "(未设置)"}");
+                    return;
+                }
+
                 // read from reg
                 var isSystemProxyEnabled = (int)(Registry.GetValue(ProxyRegPathFull, "ProxyEnable", 0) ?? 0);
                 var systemProxyString = Registry.GetValue(ProxyRegPathFull, "ProxyServer", string.Empty) as string;

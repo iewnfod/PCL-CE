@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <TargetFramework>net10.0-windows</TargetFramework>
+        <TargetFrameworks>net10.0;net10.0-windows</TargetFrameworks>
         <OutputType>Library</OutputType>
         <LangVersion>14.0</LangVersion>
         <Nullable>enable</Nullable>
@@ -14,7 +14,7 @@
         <AssemblyVersion>1.0.0.0</AssemblyVersion>
         <FileVersion>1.0.0.0</FileVersion>
         <EnableWindowsTargeting>true</EnableWindowsTargeting>
-        <UseWPF>true</UseWPF>
+        <UseWPF Condition="'$(TargetFramework)' == 'net10.0-windows'">true</UseWPF>
     </PropertyGroup>
     <PropertyGroup>
         <DebugSymbols>true</DebugSymbols>
@@ -52,8 +52,20 @@
     <ItemGroup>
         <ProjectReference Include="..\PCL.Core\PCL.Core.csproj" />
         <ProjectReference Include="..\PCL.Launcher.Core\PCL.Launcher.Core.csproj" />
+    </ItemGroup>
+    <!-- WPF 适配层与其测试仅存在于 windows 目标 -->
+    <ItemGroup Condition="'$(TargetFramework)' == 'net10.0-windows'">
         <ProjectReference Include="..\PCL.Core.Wpf\PCL.Core.Wpf.csproj" />
     </ItemGroup>
+    <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
+        <Compile Remove="BlurPerformanceTest.cs" />
+        <!-- PCL.Core.Wpf 仅在 windows 目标引用；其下的测试一并排除 -->
+        <Compile Remove="Validate\**\*.cs" />
+    </ItemGroup>
+    <!-- WINDOWS 编译符号：仅 net10.0-windows 目标定义 -->
+    <PropertyGroup Condition="'$(TargetFramework)' == 'net10.0-windows'">
+        <DefineConstants>$(DefineConstants);WINDOWS</DefineConstants>
+    </PropertyGroup>
     <ItemGroup>
         <Compile Remove="Net\**" />
     </ItemGroup>

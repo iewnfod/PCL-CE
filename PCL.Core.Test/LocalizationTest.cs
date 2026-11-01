@@ -67,7 +67,7 @@ public class LocalizationTest
         {
             CultureInfo.GetCultureInfo(language.CultureName);
 
-            var filePath = Path.Combine(GetRepositoryRoot(), "PCL.Core", "App", "Localization", "Languages",
+            var filePath = Path.Combine(GetRepositoryRoot(), "PCL.Core.Wpf", "App", "Localization", "Languages",
                 language.Code + ".xaml");
             Assert.IsTrue(File.Exists(filePath), $"{language.Code} 缺少语言资源文件");
         }
@@ -77,6 +77,7 @@ public class LocalizationTest
     [TestMethod]
     public void FontProfileShouldFollowCultureGlyphStandard()
     {
+#if WINDOWS
         Assert.AreEqual(LocalizationFontProfile.SimplifiedChinese,
             LocalizationFontService.ResolveProfileFromCultureName("zh-CN"));
         Assert.AreEqual(LocalizationFontProfile.SimplifiedChinese,
@@ -101,6 +102,10 @@ public class LocalizationTest
             LocalizationFontService.ResolveProfileFromCultureName("es-ES"));
         Assert.AreEqual(LocalizationFontProfile.Other,
             LocalizationFontService.ResolveProfileFromCultureName("pt-BR"));
+#else
+        // LocalizationFontService 位于 PCL.Core.Wpf，非 Windows 目标跳过
+        Assert.Inconclusive("LocalizationFontService requires PCL.Core.Wpf (windows target only)");
+#endif
     }
 
     [TestMethod]
@@ -117,7 +122,7 @@ public class LocalizationTest
 
     private static string[] LoadKeyList(string language)
     {
-        var filePath = Path.Combine(GetRepositoryRoot(), "PCL.Core", "App", "Localization", "Languages",
+        var filePath = Path.Combine(GetRepositoryRoot(), "PCL.Core.Wpf", "App", "Localization", "Languages",
             language + ".xaml");
         var document = XDocument.Load(filePath);
         var keyAttributeName = XName.Get("Key", "http://schemas.microsoft.com/winfx/2006/xaml");

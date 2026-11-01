@@ -1,5 +1,8 @@
 using System;
+#if WINDOWS
 using System.Management;
+#endif
+using System.IO;
 using System.Text;
 using PCL.Core.Logging;
 using PCL.Core.Utils.Exts;
@@ -17,10 +20,16 @@ public class Identify
         var code = new StringBuilder();
         try
         {
+#if WINDOWS
             code.Append("UUID:").Append(_GetWmiProperty("Win32_ComputerSystemProduct", "UUID"))
                 .Append("|MB_Prod:").Append(_GetWmiProperty("Win32_BaseBoard", "Product"))
                 .Append("|MB_SN:").Append(_GetWmiProperty("Win32_BaseBoard", "SerialNumber"))
                 .Append("|CPU:").Append(_GetWmiProperty("Win32_Processor", "ProcessorId"));
+#else
+            code.Append("MachineId:").Append(_ReadFirstLine("/etc/machine-id"))
+                .Append("|Board:").Append(_ReadFirstLine("/sys/class/dmi/id/board_name"))
+                .Append("|BoardSN:").Append(_ReadFirstLine("/sys/class/dmi/id/board_serial"));
+#endif
         }
         catch (Exception ex)
         {
@@ -30,6 +39,7 @@ public class Identify
         return Encoding.UTF8.GetBytes(SHA512Provider.Instance.ComputeHash(code.ToString()).ToHexString());
     }
 
+#if WINDOWS
     private static string _GetWmiProperty(string className, string propertyName)
     {
         try
@@ -46,6 +56,16 @@ public class Identify
         catch { /* Ignore */ }
         return string.Empty;
     }
+#else
+    private static string _ReadFirstLine(string path)
+    {
+        try
+        {
+            return File.Exists(path) ? File.ReadAllText(path).Trim() : string.Empty;
+        }
+        catch { return string.Empty; }
+    }
+#endif
 
     private static string _getLauncherId()
     {

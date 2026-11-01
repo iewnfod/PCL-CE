@@ -33,6 +33,12 @@ public class EncryptHelperKeyTest
     [TestMethod]
     public void Version1KeyIsMigratedToCng()
     {
+        if (!OperatingSystem.IsWindows())
+        {
+            // v1 → v2 迁移依赖 CAPI/CNG DPAPI，仅 Windows 可测
+            Assert.Inconclusive("DPAPI key migration is Windows-only");
+        }
+
         var rawKey = RandomKey();
         Write(1, ProtectedData.Protect(rawKey, Entropy, DataProtectionScope.CurrentUser));
 
@@ -54,9 +60,12 @@ public class EncryptHelperKeyTest
         Random.Shared.NextBytes(payload);
         Write(version, payload);
 
+        // Windows 重建为 v2（CNG DPAPI），Unix 重建为 v3（keyfile 0600）
+        var expectedRebuildVersion = OperatingSystem.IsWindows() ? 2u : 3u;
+
         Assert.AreEqual(32, EncryptHelper.EncryptionKey.Length);
         Assert.AreEqual(1, BrokenFiles().Length, "坏文件应被改名留存");
-        Assert.AreEqual(2u, ReadVersion(), "应生成 version 2 新密钥");
+        Assert.AreEqual(expectedRebuildVersion, ReadVersion(), "应生成新版本密钥");
     }
 
     [TestMethod]
