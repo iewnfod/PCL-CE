@@ -1,0 +1,115 @@
+<Styles
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:PCL.Avalonia.Controls">
+
+    <!-- 1:1 复刻 WPF MyListItem：42 高、六列网格（勾选条|缩进|Logo|标题|信息|右距），
+         悬停 Bg1 浮层、按下 ColorBrush6 + 0.98 缩放、勾选条弹性弹出 -->
+    <Styles.Resources>
+        <ControlTheme x:Key="{x:Type controls:MyListItem}" TargetType="controls:MyListItem">
+            <Setter Property="Height" Value="42" />
+            <Setter Property="Foreground" Value="{DynamicResource ColorBrush1}" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Panel x:Name="PART_Root" Background="Transparent"
+                           RenderTransformOrigin="0.5,0.5" RenderTransform="scale(1,1)">
+                        <!-- RectBack：悬停/按下背景浮层（ColorBrush7 → Bg1 / ColorBrush6） -->
+                        <Border x:Name="PART_Back" CornerRadius="6" BorderThickness="1"
+                                Background="{DynamicResource ColorBrush7}"
+                                BorderBrush="{DynamicResource ColorBrush6}"
+                                Opacity="0" IsHitTestVisible="False" />
+                        <Grid x:Name="PART_Grid" ColumnDefinitions="2,0,4,Auto,*,4">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="1*" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="1*" />
+                            </Grid.RowDefinitions>
+                            <!-- 勾选条：宽 5、高 20、圆角 2、ColorBrush3，选中弹性展开 -->
+                            <Border x:Name="PART_Check" Grid.Column="0" Grid.RowSpan="4"
+                                    Width="5" Height="20" CornerRadius="2"
+                                    HorizontalAlignment="Left" VerticalAlignment="Center"
+                                    Margin="-1,0,0,0"
+                                    Background="{DynamicResource ColorBrush3}"
+                                    RenderTransformOrigin="0.5,0.5"
+                                    RenderTransform="scale(1,0)" IsHitTestVisible="False" />
+                            <ContentPresenter x:Name="PART_Logo" Grid.Column="2" Grid.RowSpan="4"
+                                              IsVisible="False" />
+                            <TextBlock x:Name="PART_Title" Grid.Column="3" Grid.ColumnSpan="2" Grid.Row="1"
+                                       Text="{TemplateBinding Title}"
+                                       FontSize="{TemplateBinding FontSizeOverride}"
+                                       Foreground="{TemplateBinding Foreground}"
+                                       TextTrimming="CharacterEllipsis" HorizontalAlignment="Left" />
+                            <TextBlock x:Name="PART_Info" Grid.Column="4" Grid.Row="2"
+                                       Text="{TemplateBinding Info}" FontSize="12" Opacity="0.6"
+                                       Foreground="{TemplateBinding Foreground}"
+                                       TextTrimming="CharacterEllipsis" HorizontalAlignment="Left" />
+                            <Panel x:Name="PART_Tags" Grid.Column="3" Grid.Row="2" IsVisible="False" />
+                            <Panel x:Name="PART_Buttons" Grid.ColumnSpan="6" Grid.RowSpan="4" Opacity="0" />
+                        </Grid>
+                    </Panel>
+                </ControlTemplate>
+            </Setter>
+
+            <!-- 背景浮层：颜色/透明度 120ms（WPF AaColor+AaOpacity 120ms） -->
+            <Style Selector="^ /template/ Border#PART_Back">
+                <Setter Property="Transitions">
+                    <Transitions>
+                        <BrushTransition Property="Background" Duration="0:0:0.12" />
+                        <DoubleTransition Property="Opacity" Duration="0:0:0.12" />
+                    </Transitions>
+                </Setter>
+            </Style>
+            <Style Selector="^:pointerover /template/ Border#PART_Back">
+                <Setter Property="Background" Value="{DynamicResource ColorBrushBg1}" />
+                <Setter Property="Opacity" Value="1" />
+            </Style>
+            <Style Selector="^:pressed /template/ Border#PART_Back">
+                <Setter Property="Background" Value="{DynamicResource ColorBrush6}" />
+                <Setter Property="Opacity" Value="1" />
+            </Style>
+
+            <!-- 整项按下 0.98 缩放（仅 IsScaleAnimationEnabled；WPF 0.9×120ms Fluent） -->
+            <Style Selector="^:scaleAnim /template/ Panel#PART_Root">
+                <Setter Property="Transitions">
+                    <Transitions>
+                        <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.12" />
+                    </Transitions>
+                </Setter>
+            </Style>
+            <Style Selector="^:scaleAnim:pressed /template/ Panel#PART_Root">
+                <Setter Property="RenderTransform" Value="scale(0.98,0.98)" />
+            </Style>
+
+            <!-- 勾选条：300ms 弹性展开（WPF AniEaseOutBack Weak） -->
+            <Style Selector="^ /template/ Border#PART_Check">
+                <Setter Property="Transitions">
+                    <Transitions>
+                        <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.3">
+                            <TransformOperationsTransition.Easing>
+                                <SplineEasing X1="0.34" Y1="1.4" X2="0.64" Y2="1" />
+                            </TransformOperationsTransition.Easing>
+                        </TransformOperationsTransition>
+                    </Transitions>
+                </Setter>
+            </Style>
+            <Style Selector="^:checked /template/ Border#PART_Check">
+                <Setter Property="RenderTransform" Value="scale(1,1)" />
+            </Style>
+            <!-- 选中前景色由代码控制（WPF RefreshCheckedVisual 同款：SetResourceReference） -->
+
+            <!-- 右侧按钮悬停淡入（WPF 70%/30% 时序 → 100ms） -->
+            <Style Selector="^ /template/ Panel#PART_Buttons">
+                <Setter Property="Transitions">
+                    <Transitions>
+                        <DoubleTransition Property="Opacity" Duration="0:0:0.1" />
+                    </Transitions>
+                </Setter>
+            </Style>
+            <Style Selector="^:pointerover /template/ Panel#PART_Buttons">
+                <Setter Property="Opacity" Value="1" />
+            </Style>
+        </ControlTheme>
+    </Styles.Resources>
+</Styles>

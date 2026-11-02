@@ -26,5 +26,8 @@
         <EmbeddedResource Include="metadata.json" LogicalName="PCL.metadata.json" />
         <!-- 语言 XAML 作为资源打包，供 AvaloniaLocalizationBackend 解析 -->
         <EmbeddedResource Include="..\PCL.Core.Wpf\App\Localization\Languages\zh-CN.xaml" Link="Languages\zh-CN.xaml" />
+        <!-- SVG 图标包与 WPF 版共享同一份源文件（PCL.Avalonia/Controls/SvgIcon 渲染） -->
+        <AvaloniaResource Include="..\PCL.Core.Wpf\UI\Assets\IconPacks\**\*.svg"
+                          Link="Assets\IconPacks\%(RecursiveDir)%(Filename)%(Extension)" />
     </ItemGroup>
 </Project>

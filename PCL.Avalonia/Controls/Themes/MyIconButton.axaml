@@ -1,0 +1,96 @@
+<Styles
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:PCL.Avalonia.Controls">
+
+    <!-- 1:1 复刻 WPF MyIconButton：圆形 PanBack + 矢量图标 + 按下 0.8 缩放/回弹 -->
+    <Styles.Resources>
+        <ControlTheme x:Key="{x:Type controls:MyIconButton}" TargetType="controls:MyIconButton">
+            <Setter Property="Focusable" Value="True" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Foreground" Value="{DynamicResource ColorBrush4}" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border CornerRadius="1000" Background="Transparent">
+                        <Border x:Name="PART_Back" CornerRadius="1000"
+                                Background="Transparent"
+                                RenderTransformOrigin="0.5,0.5"
+                                RenderTransform="scale(1,1)">
+                            <Panel x:Name="PART_IconHost" Margin="5" />
+                        </Border>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+
+            <!-- 颜色 120/150ms、透明度、缩放回弹（OutBack 样条近似 WPF AniEaseOutBack） -->
+            <Style Selector="^ /template/ Border#PART_Back">
+                <Setter Property="Transitions">
+                    <Transitions>
+                        <BrushTransition Property="Background" Duration="0:0:0.15" />
+                        <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.25">
+                            <TransformOperationsTransition.Easing>
+                                <SplineEasing X1="0.34" Y1="1.56" X2="0.64" Y2="1" />
+                            </TransformOperationsTransition.Easing>
+                        </TransformOperationsTransition>
+                    </Transitions>
+                </Setter>
+            </Style>
+            <Style Selector="^:pressed /template/ Border#PART_Back">
+                <Setter Property="RenderTransform" Value="scale(0.8,0.8)" />
+            </Style>
+
+            <!-- ===== Theme=Color：ColorBrush4 → ColorBrush2 ===== -->
+            <Style Selector="^[Theme=Color]">
+                <Setter Property="Foreground" Value="{DynamicResource ColorBrush4}" />
+            </Style>
+            <Style Selector="^[Theme=Color]:pointerover">
+                <Setter Property="Foreground" Value="{DynamicResource ColorBrush2}" />
+            </Style>
+
+            <!-- ===== Theme=White：#EAF2FE，悬停加 20% 白圆底 ===== -->
+            <Style Selector="^[Theme=White]">
+                <Setter Property="Foreground" Value="#EAF2FE" />
+            </Style>
+            <Style Selector="^[Theme=White]:pointerover /template/ Border#PART_Back">
+                <Setter Property="Background" Value="#32FFFFFF" />
+            </Style>
+
+            <!-- ===== Theme=Red：63% #FF4C4C → 不透明 ===== -->
+            <Style Selector="^[Theme=Red]">
+                <Setter Property="Foreground" Value="#FFFF4C4C" />
+            </Style>
+            <Style Selector="^[Theme=Red]:pointerover">
+                <Setter Property="Foreground" Value="#FFFF4C4C" />
+            </Style>
+            <Style Selector="^[Theme=Red] /template/ Panel#PART_IconHost">
+                <Setter Property="Opacity" Value="0.63" />
+            </Style>
+            <Style Selector="^[Theme=Red]:pointerover /template/ Panel#PART_IconHost">
+                <Setter Property="Opacity" Value="1" />
+            </Style>
+
+            <!-- ===== Theme=Black：63% 黑（暗色为白）→ 90% ===== -->
+            <Style Selector="^[Theme=Black]:light">
+                <Setter Property="Foreground" Value="#FF000000" />
+            </Style>
+            <Style Selector="^[Theme=Black]:dark">
+                <Setter Property="Foreground" Value="#FFFFFFFF" />
+            </Style>
+            <Style Selector="^[Theme=Black] /template/ Panel#PART_IconHost">
+                <Setter Property="Opacity" Value="0.63" />
+            </Style>
+            <Style Selector="^[Theme=Black]:pointerover /template/ Panel#PART_IconHost">
+                <Setter Property="Opacity" Value="0.9" />
+            </Style>
+
+            <!-- ===== Theme=Custom：以 Foreground 为基色，63% → 100% ===== -->
+            <Style Selector="^[Theme=Custom] /template/ Panel#PART_IconHost">
+                <Setter Property="Opacity" Value="0.63" />
+            </Style>
+            <Style Selector="^[Theme=Custom]:pointerover /template/ Panel#PART_IconHost">
+                <Setter Property="Opacity" Value="1" />
+            </Style>
+        </ControlTheme>
+    </Styles.Resources>
+</Styles>

@@ -7,5 +7,8 @@
         <StyleInclude Source="avares://PCL.CE.Avalonia/Controls/PclStyles.axaml" />
         <StyleInclude Source="avares://PCL.CE.Avalonia/Controls/Themes/MyButton.axaml" />
         <StyleInclude Source="avares://PCL.CE.Avalonia/Controls/Themes/MyCard.axaml" />
+        <StyleInclude Source="avares://PCL.CE.Avalonia/Controls/Themes/MyIconButton.axaml" />
+        <StyleInclude Source="avares://PCL.CE.Avalonia/Controls/Themes/MyListItem.axaml" />
+        <StyleInclude Source="avares://PCL.CE.Avalonia/Controls/Themes/MyCheckBox.axaml" />
     </Application.Styles>
 </Application>
