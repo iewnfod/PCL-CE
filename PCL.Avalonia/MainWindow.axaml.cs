@@ -71,8 +71,8 @@ public partial class MainWindowViewModel : INotifyPropertyChanged
     public Controls.MyCard DemoCard { get; } = new()
     {
         Title = "控件库演示（点击展开）",
-        CanToggle = true,
-        IsExpanded = false,
+        CanSwap = true,
+        IsSwapped = true,
     };
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -238,6 +238,7 @@ public partial class MainWindowViewModel : INotifyPropertyChanged
         DemoCard.Content = new StackPanel
         {
             Spacing = 10,
+            Margin = new Thickness(15, 44, 15, 18),
             Children =
             {
                 new StackPanel
@@ -245,9 +246,9 @@ public partial class MainWindowViewModel : INotifyPropertyChanged
                     Orientation = Orientation.Horizontal, Spacing = 10,
                     Children =
                     {
-                        new Button { Content = "主按钮", Classes = { "primary" } },
-                        new Button { Content = "普通按钮" },
-                        new Button { Content = "文字按钮", Classes = { "accent" } },
+                        new Controls.MyButton { Text = "普通按钮" },
+                        new Controls.MyButton { Text = "强调按钮", ColorType = Controls.MyButtonColorType.Highlight },
+                        new Controls.MyButton { Text = "红色按钮", ColorType = Controls.MyButtonColorType.Red },
                     }
                 },
                 new TextBox { Watermark = "输入框（聚焦显示主题色边框）" },
@@ -267,9 +268,9 @@ public partial class MainWindowViewModel : INotifyPropertyChanged
         };
     }
 
-    private static Button _HintButton(string text, PCL.Core.UI.Hints.HintKind kind)
+    private static Controls.MyButton _HintButton(string text, PCL.Core.UI.Hints.HintKind kind)
     {
-        var button = new Button { Content = text };
+        var button = new Controls.MyButton { Text = text };
         button.Click += (_, _) =>
             PCL.Core.UI.Hints.HintService.Show(new PCL.Core.UI.Hints.HintRequest
             {
@@ -279,9 +280,9 @@ public partial class MainWindowViewModel : INotifyPropertyChanged
         return button;
     }
 
-    private static Button _MsgBoxButton()
+    private static Controls.MyButton _MsgBoxButton()
     {
-        var button = new Button { Content = "消息弹窗", Classes = { "primary" } };
+        var button = new Controls.MyButton { Text = "消息弹窗", ColorType = Controls.MyButtonColorType.Highlight };
         button.Click += async (_, _) =>
         {
             var choice = await Controls.MyMsgBox.ShowAsync(

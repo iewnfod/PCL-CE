@@ -1,0 +1,87 @@
+<Styles
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:PCL.Avalonia.Controls">
+
+    <Styles.Resources>
+        <!-- 1:1 复刻 WPF MyButton：双层 Border + 主题色描边 + 13px 文字 + 按下 0.955 缩放 -->
+        <ControlTheme x:Key="{x:Type controls:MyButton}" TargetType="controls:MyButton">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource ColorBrush1}" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Padding" Value="13,5" />
+            <Setter Property="MinWidth" Value="20" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Background="Transparent">
+                        <Border x:Name="PART_Fore" CornerRadius="3"
+                                BorderThickness="1"
+                                BorderBrush="{DynamicResource ColorBrush1}"
+                                Background="{DynamicResource ColorBrushHalfWhite}"
+                                Padding="{TemplateBinding Padding}"
+                                RenderTransformOrigin="0.5,0.5"
+                                RenderTransform="scale(1,1)">
+                            <TextBlock Text="{TemplateBinding Text}"
+                                       FontSize="{TemplateBinding FontSize}"
+                                       Foreground="{TemplateBinding Foreground}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+
+            <!-- 颜色/缩放过渡（150ms 颜色、80ms 缩放，对应 WPF 动画时长） -->
+            <Style Selector="^ /template/ Border#PART_Fore">
+                <Setter Property="Transitions">
+                    <Transitions>
+                        <BrushTransition Property="Background" Duration="0:0:0.15" />
+                        <BrushTransition Property="BorderBrush" Duration="0:0:0.15" />
+                        <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.08" />
+                    </Transitions>
+                </Setter>
+            </Style>
+
+            <!-- 悬停：描边 → ColorBrush3、底 → ColorBrush7、文字跟随描边色（WPF 行为） -->
+            <Style Selector="^:pointerover /template/ Border#PART_Fore">
+                <Setter Property="BorderBrush" Value="{DynamicResource ColorBrush3}" />
+                <Setter Property="Background" Value="{DynamicResource ColorBrush7}" />
+            </Style>
+            <Style Selector="^:pointerover">
+                <Setter Property="Foreground" Value="{DynamicResource ColorBrush3}" />
+            </Style>
+
+            <!-- 按下：缩放 0.955（WPF: 80ms ExtraStrong ease-out + 回弹） -->
+            <Style Selector="^:pressed /template/ Border#PART_Fore">
+                <Setter Property="RenderTransform" Value="scale(0.955, 0.955)" />
+            </Style>
+
+            <!-- Highlight 型：常态描边/文字 ColorBrush2 -->
+            <Style Selector="^[ColorType=Highlight]">
+                <Setter Property="Foreground" Value="{DynamicResource ColorBrush2}" />
+            </Style>
+            <Style Selector="^[ColorType=Highlight] /template/ Border#PART_Fore">
+                <Setter Property="BorderBrush" Value="{DynamicResource ColorBrush2}" />
+            </Style>
+
+            <!-- Red 型：WPF ColorBrushRedLight/RedDark -->
+            <Style Selector="^[ColorType=Red]">
+                <Setter Property="Foreground" Value="#D9534F" />
+            </Style>
+            <Style Selector="^[ColorType=Red] /template/ Border#PART_Fore">
+                <Setter Property="BorderBrush" Value="#C74643" />
+            </Style>
+            <Style Selector="^[ColorType=Red]:pointerover /template/ Border#PART_Fore">
+                <Setter Property="BorderBrush" Value="#E07B78" />
+            </Style>
+
+            <!-- 禁用：Gray4（WPF: ThemeManager.colorGray4） -->
+            <Style Selector="^:disabled">
+                <Setter Property="Foreground" Value="{DynamicResource ColorBrushGray4}" />
+            </Style>
+            <Style Selector="^:disabled /template/ Border#PART_Fore">
+                <Setter Property="BorderBrush" Value="{DynamicResource ColorBrushGray4}" />
+            </Style>
+        </ControlTheme>
+    </Styles.Resources>
+</Styles>

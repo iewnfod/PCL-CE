@@ -1,5 +1,6 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="using:PCL.Avalonia.Controls"
         x:Class="PCL.Avalonia.MainWindow"
         Title="Plain Craft Launcher CE"
         Width="920" Height="600"
@@ -27,13 +28,13 @@
                 <ComboBox x:Name="InstanceCombo" MinWidth="260"
                           ItemsSource="{Binding InstanceNames}"
                           SelectedIndex="0" />
-                <Button Content="刷新" Command="{Binding RefreshInstances}" />
+                <controls:MyButton Text="刷新" Command="{Binding RefreshInstances}" VerticalAlignment="Center" />
             </StackPanel>
 
             <StackPanel Grid.Row="1" Spacing="8" Margin="0,12,0,0" Orientation="Horizontal">
-                <Button x:Name="LaunchButton" Content="启动" Classes="launch"
-                        Command="{Binding Launch}" FontSize="16" Padding="28,8" />
-                <Button Content="终止" Command="{Binding KillGame}" VerticalAlignment="Center" />
+                <controls:MyButton x:Name="LaunchButton" Text="启动" FontSize="16" Padding="28,8"
+                                   Command="{Binding Launch}" />
+                <controls:MyButton Text="终止" Command="{Binding KillGame}" VerticalAlignment="Center" />
                 <ProgressBar x:Name="LaunchProgress" Width="220" Height="18" VerticalAlignment="Center"
                              Minimum="0" Maximum="1" Value="{Binding LaunchProgress}" />
             </StackPanel>

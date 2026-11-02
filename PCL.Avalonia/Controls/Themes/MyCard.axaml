@@ -4,48 +4,88 @@
     xmlns:controls="using:PCL.Avalonia.Controls">
 
     <Styles.Resources>
-        <ControlTheme x:Key="{x:Type controls:MyCard}"
-                      TargetType="controls:MyCard">
-
-    <Setter Property="Template">
-        <ControlTemplate>
-            <Border Background="{DynamicResource ColorBrushBackground}"
-                    CornerRadius="8"
-                    BoxShadow="0 1 3 0 #22000000"
-                    ClipToBounds="True">
-                <Grid RowDefinitions="Auto,*" Margin="14,12">
-                    <!-- 标题行 -->
-                    <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,6"
-                          IsVisible="{TemplateBinding Title, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
-                        <ToggleButton x:Name="PART_Expander" Grid.Column="0" Grid.ColumnSpan="3"
-                                      Background="Transparent" BorderThickness="0" Padding="0"
-                                      HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
-                                      IsVisible="{TemplateBinding CanToggle}"
-                                      Focusable="False">
-                            <Grid ColumnDefinitions="Auto,*,Auto">
-                                <TextBlock Grid.Column="0" Text="{TemplateBinding Title}" FontWeight="Bold"
-                                           FontSize="14" VerticalAlignment="Center"
-                                           Foreground="{DynamicResource ColorBrushMemory}" />
-                                <Panel Grid.Column="1" />
-                                <Path Grid.Column="2" Data="M 0 0 L 4 4 L 8 0 Z"
-                                      Fill="{DynamicResource ColorBrush5}"
-                                      VerticalAlignment="Center" Margin="6,4,2,0"
-                                      IsVisible="{TemplateBinding CanToggle}" />
+        <!-- 1:1 复刻 WPF MyCard：半径5、TransparentBackground 底、主题色阴影 0.07→0.4（悬停 90ms），
+             标题 15,12 / 13px Bold / ColorBrush1→2（悬停），折叠箭头 V 形旋转，折叠高度 40 -->
+        <ControlTheme x:Key="{x:Type controls:MyCard}" TargetType="controls:MyCard">
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Panel>
+                        <!-- 主题色投影（WPF: MyDropShadow, ColorObject1, 0.07/悬停 0.4, 半径3, 外扩 -3）
+                             阴影色由 code-behind 从主题资源读取（BoxShadows.Parse 不支持 DynamicResource 插值） -->
+                        <Border x:Name="PART_Shadow" CornerRadius="5"
+                                Background="Transparent"
+                                BoxShadow="0 0 6 2 #33000000"
+                                Opacity="0.07"
+                                Margin="-3">
+                        </Border>
+                        <!-- 卡片主体（WPF: BlurBorder + ColorBrushTransparentBackground） -->
+                        <Border CornerRadius="5" ClipToBounds="True"
+                                Background="{DynamicResource ColorBrushTransparentBackground}">
+                            <Grid RowDefinitions="40,*">
+                                <!-- 标题行（40px 热区） -->
+                                <Border x:Name="PART_Header" Grid.Row="0" Background="Transparent">
+                                    <Panel>
+                                        <TextBlock Text="{TemplateBinding Title}" FontWeight="Bold" FontSize="13"
+                                                   Foreground="{DynamicResource ColorBrush1}"
+                                                   HorizontalAlignment="Left" VerticalAlignment="Top"
+                                                   Margin="15,12,0,0" IsHitTestVisible="False" />
+                                        <!-- 折叠箭头（WPF: V 形 Path 10x6, 初始 180°=向下=展开） -->
+                                        <Path Data="M2,4 l-2,2 10,10 10,-10 -2,-2 -8,8 -8,-8 z"
+                                              Fill="{DynamicResource ColorBrush1}"
+                                              HorizontalAlignment="Right" VerticalAlignment="Top"
+                                              Stretch="Uniform" Height="6" Width="10" Margin="0,17,16,0"
+                                              IsHitTestVisible="False" RenderTransformOrigin="0.5,0.5"
+                                              RenderTransform="rotate(180deg)" />
+                                    </Panel>
+                                </Border>
+                                <!-- 内容 -->
+                                <ContentPresenter Grid.Row="1" Content="{TemplateBinding Content}"
+                                                  IsVisible="{Binding !IsSwapped, RelativeSource={RelativeSource TemplatedParent}}" />
                             </Grid>
-                        </ToggleButton>
-                        <TextBlock Grid.Column="0" Text="{TemplateBinding Title}" FontWeight="Bold" FontSize="14"
-                                   VerticalAlignment="Center" Foreground="{DynamicResource ColorBrushMemory}"
-                                   IsVisible="{TemplateBinding CanToggle, Converter={x:Static ObjectConverters.IsNull}}" />
-                        <ContentControl Grid.Column="2" Content="{TemplateBinding TitleRight}"
-                                        VerticalAlignment="Center" Margin="8,0,0,0" />
-                    </Grid>
-                    <!-- 内容：折叠时隐藏（IsExpanded 默认 true，CanToggle=False 时恒可见） -->
-                    <ContentPresenter Grid.Row="1" Content="{TemplateBinding Content}"
-                                      IsVisible="{TemplateBinding IsExpanded}" />
-                </Grid>
-            </Border>
-        </ControlTemplate>
-    </Setter>
+                        </Border>
+                    </Panel>
+                </ControlTemplate>
+            </Setter>
+
+            <!-- 阴影/文字过渡（90ms，对应 WPF 动画时长） -->
+            <Style Selector="^ /template/ Border#PART_Shadow">
+                <Setter Property="Transitions">
+                    <Transitions>
+                        <DoubleTransition Property="Opacity" Duration="0:0:0.09" />
+                    </Transitions>
+                </Setter>
+            </Style>
+            <Style Selector="^ /template/ TextBlock">
+                <Setter Property="Transitions">
+                    <Transitions>
+                        <BrushTransition Property="Foreground" Duration="0:0:0.09" />
+                    </Transitions>
+                </Setter>
+            </Style>
+            <Style Selector="^ /template/ Path">
+                <Setter Property="Transitions">
+                    <Transitions>
+                        <BrushTransition Property="Fill" Duration="0:0:0.09" />
+                        <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.25" />
+                    </Transitions>
+                </Setter>
+            </Style>
+
+            <!-- 悬停：阴影 0.4 + ColorObject4、标题/箭头 → ColorBrush2（WPF: 90ms） -->
+            <Style Selector="^:pointerover /template/ Border#PART_Shadow">
+                <Setter Property="Opacity" Value="0.4" />
+            </Style>
+            <Style Selector="^:pointerover /template/ TextBlock">
+                <Setter Property="Foreground" Value="{DynamicResource ColorBrush2}" />
+            </Style>
+            <Style Selector="^:pointerover /template/ Path">
+                <Setter Property="Fill" Value="{DynamicResource ColorBrush2}" />
+            </Style>
+
+            <!-- 折叠态：箭头转回 0°（WPF: 270°为右向变体，默认 0°=向上），高度收为 40 -->
+            <Style Selector="^:swapped /template/ Path">
+                <Setter Property="RenderTransform" Value="rotate(0deg)" />
+            </Style>
         </ControlTheme>
     </Styles.Resources>
 </Styles>
