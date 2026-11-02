@@ -10,5 +10,6 @@
         <StyleInclude Source="avares://PCL.CE.Avalonia/Controls/Themes/MyIconButton.axaml" />
         <StyleInclude Source="avares://PCL.CE.Avalonia/Controls/Themes/MyListItem.axaml" />
         <StyleInclude Source="avares://PCL.CE.Avalonia/Controls/Themes/MyCheckBox.axaml" />
+        <StyleInclude Source="avares://PCL.CE.Avalonia/Controls/Themes/MyRadioButton.axaml" />
     </Application.Styles>
 </Application>

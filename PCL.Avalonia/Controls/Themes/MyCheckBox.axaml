@@ -36,14 +36,14 @@
                               Data="M0,6L1.5,4.5 4.5,7.5 10.5,1.5 12,3 4.5,10.5 0,6z"
                               Stretch="Uniform"
                               HorizontalAlignment="Left" VerticalAlignment="Center"
-                              RenderTransformOrigin="0.5,0.5"
+                              RenderTransformOrigin="50%, 50%"
                               RenderTransform="scale(0,0)" IsHitTestVisible="False" />
                         <!-- 不定态方块 -->
                         <Border x:Name="PART_Indeterminate" Width="10" Height="10" Margin="5,0,0,0"
                                 CornerRadius="2"
                                 Background="{TemplateBinding BorderBrush}"
                                 HorizontalAlignment="Left" VerticalAlignment="Center"
-                                RenderTransformOrigin="0.5,0.5"
+                                RenderTransformOrigin="50%, 50%"
                                 RenderTransform="scale(0,0)" IsHitTestVisible="False" />
                     </Panel>
                 </ControlTemplate>

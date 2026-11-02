@@ -173,10 +173,10 @@ public class MyIconButton : TemplatedControl
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
         base.OnPointerPressed(e);
+        if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
         _pressed = true;
         PseudoClasses.Set(":pressed", true);
         Focus();
-        e.Handled = true;
     }
 
     protected override void OnPointerReleased(PointerReleasedEventArgs e)
@@ -185,13 +185,10 @@ public class MyIconButton : TemplatedControl
         if (!_pressed) return;
         _pressed = false;
         PseudoClasses.Set(":pressed", false);
-        if (Bounds.Contains(e.GetPosition(this)))
-        {
-            RaiseEvent(new RoutedEventArgs(ClickEvent));
-            if (Command?.CanExecute(CommandParameter) == true)
-                Command.Execute(CommandParameter);
-        }
-        e.Handled = true;
+        if (!new Rect(0, 0, Bounds.Width, Bounds.Height).Contains(e.GetPosition(this))) return;
+        RaiseEvent(new RoutedEventArgs(ClickEvent));
+        if (Command?.CanExecute(CommandParameter) == true)
+            Command.Execute(CommandParameter);
     }
 
     protected override void OnPointerExited(PointerEventArgs e)

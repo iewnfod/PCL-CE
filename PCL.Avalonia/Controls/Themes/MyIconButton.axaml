@@ -15,7 +15,7 @@
                     <Border CornerRadius="1000" Background="Transparent">
                         <Border x:Name="PART_Back" CornerRadius="1000"
                                 Background="Transparent"
-                                RenderTransformOrigin="0.5,0.5"
+                                RenderTransformOrigin="50%, 50%"
                                 RenderTransform="scale(1,1)">
                             <Panel x:Name="PART_IconHost" Margin="5" />
                         </Border>

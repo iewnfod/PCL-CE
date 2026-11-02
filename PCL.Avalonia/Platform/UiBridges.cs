@@ -40,6 +40,7 @@ internal static class UiBridges
         LogFilter.Current = new PassThroughLogFilter();
         RestrictedFeatures.Current = new UnrestrictedFeatures();
         LoadingUi.Current = new NoopLoadingUi();
+        PCL.Core.UI.Dialogs.DialogService.Instance.Presenter = new AvaloniaDialogPresenter();
         LauncherCommon.UiLogHandler = (_, text, level, title, _) =>
         {
             var type = level switch

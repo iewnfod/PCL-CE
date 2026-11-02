@@ -1,0 +1,95 @@
+<Styles
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:PCL.Avalonia.Controls">
+
+    <!-- 1:1 复刻 WPF MyRadioButton：高 27 胶囊（圆角 13.5）、图标 16 + 文字（12/8/12 边距）
+         White：SemiTransparent 底白字 → 悬停 20% 白底 → 选中白底 + ColorBrush3 字
+         Highlight：SemiTransparent 底 ColorBrush3 字 → 悬停 ColorBrush7 → 选中 ColorBrush3 底白字 -->
+    <Styles.Resources>
+        <ControlTheme x:Key="{x:Type controls:MyRadioButton}" TargetType="controls:MyRadioButton">
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border x:Name="PART_Back" CornerRadius="13.5" MinHeight="27" MaxHeight="27"
+                            Background="{DynamicResource ColorBrushSemiTransparent}"
+                            HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal">
+                            <Panel x:Name="PART_LogoHost" Width="16" Height="16" Margin="12,0,0,0"
+                                   VerticalAlignment="Center" RenderTransformOrigin="50%, 50%">
+                                <controls:SvgIcon x:Name="PART_Icon" Width="16" Height="16" />
+                            </Panel>
+                            <TextBlock x:Name="PART_Text" VerticalAlignment="Center" Margin="8,0,12,0"
+                                       Foreground="White" FontSize="13" />
+                        </StackPanel>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+
+            <!-- 状态过渡（WPF：指向 90ms / 移出 150ms / 勾选 120ms） -->
+            <Style Selector="^ /template/ Border#PART_Back">
+                <Setter Property="TextBlock.FontSize" Value="13" />
+                <Setter Property="Transitions">
+                    <Transitions>
+                        <BrushTransition Property="Background" Duration="0:0:0.12" />
+                    </Transitions>
+                </Setter>
+            </Style>
+            <Style Selector="^ /template/ TextBlock#PART_Text">
+                <Setter Property="Transitions">
+                    <Transitions>
+                        <BrushTransition Property="Foreground" Duration="0:0:0.12" />
+                    </Transitions>
+                </Setter>
+            </Style>
+            <Style Selector="^ /template/ controls|SvgIcon#PART_Icon">
+                <Setter Property="IconBrush" Value="White" />
+                <Setter Property="Transitions">
+                    <Transitions>
+                        <BrushTransition Property="IconBrush" Duration="0:0:0.12" />
+                    </Transitions>
+                </Setter>
+            </Style>
+
+            <!-- ===== ColorType=White（标题栏导航） ===== -->
+            <Style Selector="^[ColorType=White]:pointerover /template/ Border#PART_Back">
+                <Setter Property="Background" Value="#33FFFFFF" />
+            </Style>
+            <Style Selector="^[ColorType=White]:pressed /template/ Border#PART_Back">
+                <Setter Property="Background" Value="#78FFFFFF" />
+            </Style>
+            <Style Selector="^[ColorType=White]:checked /template/ Border#PART_Back">
+                <Setter Property="Background" Value="White" />
+            </Style>
+            <Style Selector="^[ColorType=White]:checked /template/ TextBlock#PART_Text">
+                <Setter Property="Foreground" Value="{DynamicResource ColorBrush3}" />
+            </Style>
+            <Style Selector="^[ColorType=White]:checked /template/ controls|SvgIcon#PART_Icon">
+                <Setter Property="IconBrush" Value="{DynamicResource ColorBrush3}" />
+            </Style>
+
+            <!-- ===== ColorType=Highlight（内容区导航） ===== -->
+            <Style Selector="^[ColorType=Highlight] /template/ TextBlock#PART_Text">
+                <Setter Property="Foreground" Value="{DynamicResource ColorBrush3}" />
+            </Style>
+            <Style Selector="^[ColorType=Highlight] /template/ controls|SvgIcon#PART_Icon">
+                <Setter Property="IconBrush" Value="{DynamicResource ColorBrush3}" />
+            </Style>
+            <Style Selector="^[ColorType=Highlight]:pointerover /template/ Border#PART_Back">
+                <Setter Property="Background" Value="{DynamicResource ColorBrush7}" />
+            </Style>
+            <Style Selector="^[ColorType=Highlight]:pressed /template/ Border#PART_Back">
+                <Setter Property="Background" Value="{DynamicResource ColorBrush6}" />
+            </Style>
+            <Style Selector="^[ColorType=Highlight]:checked /template/ Border#PART_Back">
+                <Setter Property="Background" Value="{DynamicResource ColorBrush3}" />
+            </Style>
+            <Style Selector="^[ColorType=Highlight]:checked /template/ TextBlock#PART_Text">
+                <Setter Property="Foreground" Value="White" />
+            </Style>
+            <Style Selector="^[ColorType=Highlight]:checked /template/ controls|SvgIcon#PART_Icon">
+                <Setter Property="IconBrush" Value="White" />
+            </Style>
+        </ControlTheme>
+    </Styles.Resources>
+</Styles>

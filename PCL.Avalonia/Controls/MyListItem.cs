@@ -663,8 +663,9 @@ public class MyListItem : TemplatedControl
 
     private void _OnPointerPressed(object? sender, PointerPressedEventArgs e)
     {
-        if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed &&
-            Type != MyListItemCheckType.None)
+        var left = e.GetCurrentPoint(this).Properties.IsLeftButtonPressed;
+        ClickTrace.Log($"MyListItem[{Title}] Pressed 左键={left}");
+        if (left && Type != MyListItemCheckType.None)
         {
             _pressed = true;
             PseudoClasses.Set(":pressed", true);
@@ -673,6 +674,7 @@ public class MyListItem : TemplatedControl
 
     private void _OnPointerExited(object? sender, PointerEventArgs e)
     {
+        if (_pressed) ClickTrace.Log($"MyListItem[{Title}] Exited（按下状态被清除）");
         _pressed = false;
         _logoDown = false;
         PseudoClasses.Set(":pressed", false);
@@ -690,7 +692,7 @@ public class MyListItem : TemplatedControl
         if (!_pressed) return;
         _pressed = false;
         PseudoClasses.Set(":pressed", false);
-        if (!Bounds.Contains(e.GetPosition(this))) return;
+        if (!new Rect(0, 0, Bounds.Width, Bounds.Height).Contains(e.GetPosition(this))) return;
 
         Click?.Invoke(this, e);
         _ExecuteCommand();

@@ -28,7 +28,18 @@ internal static class Program
             .Configure<App>()
             .UsePlatformDetect()
             .LogToTrace());
-        MainWindowService.Loading = static () => new AvaloniaWindowHost(new MainWindow());
+        MainWindowService.Loading = static () =>
+        {
+            try
+            {
+                return new AvaloniaWindowHost(new MainWindow());
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"[MainWindow] 构造失败：{ex}");
+                throw;
+            }
+        };
 
         // PCL.Core 的平台服务：Avalonia 实现
         PlatformServices.UiDispatcher = new AvaloniaUiDispatcher();
@@ -41,11 +52,11 @@ internal static class Program
         // 启动链 UI 桥（LaunchUi/LoginProfile/Watcher/Loading 等）
         UiBridges.Install();
 
-        // MC 实例目录：程序目录下 .minecraft（与 WPF 版默认结构一致，位于 PCL/ 下）
+        // MC 实例目录：程序目录下 .minecraft（与核心层/WPF 版约定一致）
         GameFolders.mcFolderSelected =
-            Path.Combine(Basics.ExecutableDirectory, "PCL", ".minecraft");
+            Path.Combine(Basics.ExecutableDirectory, ".minecraft");
 
-        // 启动生命周期（含 Java 扫描、配置存储、网络等全部核心服务）
+        // 启动生命周期（含 Java 扫描、配置存储、网络等全部核心服务；内部阻塞至应用退出）
         Lifecycle.OnInitialize();
     }
 }

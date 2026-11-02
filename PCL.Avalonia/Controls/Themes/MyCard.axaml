@@ -10,17 +10,17 @@
             <Setter Property="Template">
                 <ControlTemplate>
                     <Panel>
-                        <!-- 主题色投影（WPF: MyDropShadow, ColorObject1, 0.07/悬停 0.4, 半径3, 外扩 -3）
-                             阴影色由 code-behind 从主题资源读取（BoxShadows.Parse 不支持 DynamicResource 插值） -->
+                        <!-- 主题色投影（WPF: MyDropShadow 冷色调投影；浅底上用主题蓝调阴影增强浮起感） -->
                         <Border x:Name="PART_Shadow" CornerRadius="5"
-                                Background="Transparent"
-                                BoxShadow="0 0 6 2 #33000000"
-                                Opacity="0.07"
+                                Background="#01000000"
+                                BoxShadow="0 2 8 0 #143BD2"
+                                Opacity="0.10"
                                 Margin="-3">
                         </Border>
-                        <!-- 卡片主体（WPF: BlurBorder + ColorBrushTransparentBackground） -->
+                        <!-- 卡片主体（WPF: BlurBorder + ColorBrushTransparentBackground；毛玻璃以极淡描边近似轮廓） -->
                         <Border CornerRadius="5" ClipToBounds="True"
-                                Background="{DynamicResource ColorBrushTransparentBackground}">
+                                Background="{DynamicResource ColorBrushTransparentBackground}"
+                                BorderThickness="1" BorderBrush="#17000000">
                             <Grid RowDefinitions="40,*">
                                 <!-- 标题行（40px 热区） -->
                                 <Border x:Name="PART_Header" Grid.Row="0" Background="Transparent">
@@ -29,12 +29,13 @@
                                                    Foreground="{DynamicResource ColorBrush1}"
                                                    HorizontalAlignment="Left" VerticalAlignment="Top"
                                                    Margin="15,12,0,0" IsHitTestVisible="False" />
-                                        <!-- 折叠箭头（WPF: V 形 Path 10x6, 初始 180°=向下=展开） -->
-                                        <Path Data="M2,4 l-2,2 10,10 10,-10 -2,-2 -8,8 -8,-8 z"
+                                        <!-- 折叠箭头（WPF: 仅 CanSwap=true 时创建；V 形 Path 10x6, 初始 180°=向下=展开） -->
+                                        <Path x:Name="PART_Arrow"
+                                              Data="M2,4 l-2,2 10,10 10,-10 -2,-2 -8,8 -8,-8 z"
                                               Fill="{DynamicResource ColorBrush1}"
                                               HorizontalAlignment="Right" VerticalAlignment="Top"
                                               Stretch="Uniform" Height="6" Width="10" Margin="0,17,16,0"
-                                              IsHitTestVisible="False" RenderTransformOrigin="0.5,0.5"
+                                              IsVisible="False" IsHitTestVisible="False" RenderTransformOrigin="50%, 50%"
                                               RenderTransform="rotate(180deg)" />
                                     </Panel>
                                 </Border>
@@ -62,7 +63,7 @@
                     </Transitions>
                 </Setter>
             </Style>
-            <Style Selector="^ /template/ Path">
+            <Style Selector="^ /template/ Path#PART_Arrow">
                 <Setter Property="Transitions">
                     <Transitions>
                         <BrushTransition Property="Fill" Duration="0:0:0.09" />
@@ -78,12 +79,17 @@
             <Style Selector="^:pointerover /template/ TextBlock">
                 <Setter Property="Foreground" Value="{DynamicResource ColorBrush2}" />
             </Style>
-            <Style Selector="^:pointerover /template/ Path">
+            <Style Selector="^:pointerover /template/ Path#PART_Arrow">
                 <Setter Property="Fill" Value="{DynamicResource ColorBrush2}" />
             </Style>
 
+            <!-- 折叠箭头：仅 CanSwap=true 时显示（WPF 同款） -->
+            <Style Selector="^[CanSwap=True] /template/ Path#PART_Arrow">
+                <Setter Property="IsVisible" Value="True" />
+            </Style>
+
             <!-- 折叠态：箭头转回 0°（WPF: 270°为右向变体，默认 0°=向上），高度收为 40 -->
-            <Style Selector="^:swapped /template/ Path">
+            <Style Selector="^:swapped /template/ Path#PART_Arrow">
                 <Setter Property="RenderTransform" Value="rotate(0deg)" />
             </Style>
         </ControlTheme>

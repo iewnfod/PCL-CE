@@ -63,7 +63,7 @@ public static partial class InstanceList
                 continue;
             }
 
-            var instanceFolder = $@"{folder.FullName}\";
+            var instanceFolder = folder.FullName + Path.DirectorySeparatorChar;
             var ignoreFilePath = $"{instanceFolder}.pclignore";
 
             if (File.Exists(ignoreFilePath))

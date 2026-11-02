@@ -83,30 +83,39 @@ public class MyButton : TemplatedControl
         _fore = e.NameScope.Find<Border>("PART_Fore");
     }
 
+    private bool _pressed;
+
+    // 与 MyListItem 一致的事件订阅式点击（Wayland 下 override OnPointerPressed/Released
+    // 的 Handled/路由行为不稳定，且 e.Handled=true 会破坏指针捕获）
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
         base.OnPointerPressed(e);
+        var left = e.GetCurrentPoint(this).Properties.IsLeftButtonPressed;
+        ClickTrace.Log($"MyButton[{Text}] Pressed 左键={left} 位置={e.GetPosition(this)} 边界={Bounds}");
+        if (!left) return;
+        _pressed = true;
         PseudoClasses.Set(":pressed", true);
-        e.Handled = true;
     }
 
     protected override void OnPointerReleased(PointerReleasedEventArgs e)
     {
         base.OnPointerReleased(e);
-        if (!PseudoClasses.Contains(":pressed")) return;
+        ClickTrace.Log($"MyButton[{Text}] Released _pressed={_pressed} 位置={e.GetPosition(this)} 边界内={Bounds.Contains(e.GetPosition(this))}");
+        if (!_pressed) return;
+        _pressed = false;
         PseudoClasses.Set(":pressed", false);
-        if (Bounds.Contains(e.GetPosition(this)))
-        {
-            RaiseEvent(new RoutedEventArgs(ClickEvent));
-            if (Command?.CanExecute(CommandParameter) == true)
-                Command.Execute(CommandParameter);
-        }
-        e.Handled = true;
+        if (!new Rect(0, 0, Bounds.Width, Bounds.Height).Contains(e.GetPosition(this))) return;
+        ClickTrace.Log($"MyButton[{Text}] → Click 触发");
+        RaiseEvent(new RoutedEventArgs(ClickEvent));
+        if (Command?.CanExecute(CommandParameter) == true)
+            Command.Execute(CommandParameter);
     }
 
     protected override void OnPointerExited(PointerEventArgs e)
     {
         base.OnPointerExited(e);
+        if (_pressed) ClickTrace.Log($"MyButton[{Text}] Exited（按下状态被清除）");
+        _pressed = false;
         PseudoClasses.Set(":pressed", false);
     }
 }

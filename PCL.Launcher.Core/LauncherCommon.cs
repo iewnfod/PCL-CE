@@ -619,12 +619,13 @@ public static class LauncherCommon
     {
         if (string.IsNullOrWhiteSpace(path))
             throw new ArgumentNullException(nameof(path), "文件夹名不能为空！");
-        if (!path.EndsWith('\\')) path += "\\";
+        // 跨平台探测文件（Path.Combine 按当前 OS 处理分隔符；等价 WPF 版的 "\\" 拼接）
+        var probe = System.IO.Path.Combine(path, "CheckPermission");
         if (!Directory.Exists(path))
             throw new DirectoryNotFoundException("文件夹不存在！");
-        if (File.Exists($"{path}CheckPermission"))
-            File.Delete($"{path}CheckPermission");
-        File.Create($"{path}CheckPermission").Dispose();
-        File.Delete($"{path}CheckPermission");
+        if (File.Exists(probe))
+            File.Delete(probe);
+        File.Create(probe).Dispose();
+        File.Delete(probe);
     }
 }

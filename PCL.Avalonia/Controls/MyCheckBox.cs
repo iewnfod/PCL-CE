@@ -167,7 +167,7 @@ public class MyCheckBox : TemplatedControl
         if (!_pressed) return;
         _pressed = false;
         PseudoClasses.Set(":pressed", false);
-        if (!Bounds.Contains(e.GetPosition(this))) return;
+        if (!new Rect(0, 0, Bounds.Width, Bounds.Height).Contains(e.GetPosition(this))) return;
 
         // 三态循环：false → true → null → false（WPF Checkbox_MouseUp 同款）
         if (IsThreeState)

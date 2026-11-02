@@ -2,76 +2,109 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="using:PCL.Avalonia.Controls"
         x:Class="PCL.Avalonia.MainWindow"
-        Title="Plain Craft Launcher CE"
-        Width="920" Height="600"
+        Title="Plain Craft Launcher Community Edition"
+        Width="850" Height="500"
+        MinWidth="810" MinHeight="470"
         WindowStartupLocation="CenterScreen"
-        MinWidth="760" MinHeight="480">
+        SystemDecorations="BorderOnly"
+        Background="{DynamicResource ColorBrushBackground}">
 
-    <Grid ColumnDefinitions="220,*">
-        <!-- 左侧导航栏 -->
-        <Border Grid.Column="0" Background="#F2F2F2">
-            <StackPanel Margin="8,32,8,12" Spacing="4">
-                <TextBlock Text="PCL CE" FontSize="20" FontWeight="Bold" Margin="12,0,0,10" />
-                <Button Content="主页" Classes="nav" />
-                <Button Content="下载" Classes="nav" />
-                <Button Content="设置" Classes="nav" />
-                <Panel />
-                <TextBlock Text="{Binding StatusText}" FontSize="11" Opacity="0.55"
-                           Margin="12,0,0,0" TextWrapping="Wrap" />
+    <!-- 1:1 复刻 FormMain：标题栏(48px 主题色) + 左栏背景/阴影 + 左右双页内容区 -->
+    <Grid RowDefinitions="48,*">
+
+        <!-- ===== 标题栏 ===== -->
+        <Grid Grid.Row="0" x:Name="PanTitle" Background="{DynamicResource ColorBrush3}">
+            <!-- 拖动层：铺满标题栏的底层透明块（按钮等在上层，避免拖动劫持按钮点击） -->
+            <Border x:Name="PanTitleDrag" Background="Transparent" Grid.ColumnSpan="3" />
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="1*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- 左：PCL logo（白色线条）+ CE 徽标 -->
+            <Grid Grid.Column="0" x:Name="PanTitleLeft" HorizontalAlignment="Left"
+                  VerticalAlignment="Stretch">
+                <Path x:Name="ShapeTitleLogo"
+                      Data="M26,29 v-25 h6 a7,7 180 0 1 0,14 h-6 M62.5,6.5 a10,11.5 180 1 0 0,18 M71,2.5 v24.5 h13.5"
+                      Stroke="White" StrokeThickness="2.2"
+                      HorizontalAlignment="Left" Margin="19,15.5,0,15.5"
+                      Stretch="Uniform" Width="39" />
+                <!-- Linux 徽标：白底圆角徽章 + 主题色文字（沿用 CE 徽标设计语言） -->
+                <Border x:Name="CELogo" Background="White" CornerRadius="5"
+                        Height="18" HorizontalAlignment="Left"
+                        VerticalAlignment="Center" Margin="62,0,0,0"
+                        Padding="4,0">
+                    <TextBlock Text="Linux" FontSize="11" FontWeight="Bold"
+                               Foreground="{DynamicResource ColorBrush3}"
+                               HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
+            </Grid>
+
+            <!-- 中：主导航（启动/下载/设置/工具） -->
+            <StackPanel Grid.Column="1" x:Name="PanTitleSelect" Orientation="Horizontal"
+                        HorizontalAlignment="Left" VerticalAlignment="Center"
+                        Height="27" Margin="13,0">
+                <controls:MyRadioButton x:Name="BtnTitleSelect0" Text="启动" Tag="0"
+                                        Margin="5,0" Padding="2,0" LogoScale="0.9"
+                                        SvgIcon="lucide/play" />
+                <controls:MyRadioButton x:Name="BtnTitleSelect1" Text="下载" Tag="1"
+                                        Margin="5,0" Padding="2,0" LogoScale="0.9"
+                                        SvgIcon="lucide/download" />
+                <controls:MyRadioButton x:Name="BtnTitleSelect2" Text="设置" Tag="2"
+                                        Margin="5,0" Padding="2,0" LogoScale="1.1"
+                                        SvgIcon="lucide/settings" />
+                <controls:MyRadioButton x:Name="BtnTitleSelect3" Text="工具" Tag="3"
+                                        Margin="5,0" Padding="2,0" LogoScale="1"
+                                        SvgIcon="lucide/wrench" />
             </StackPanel>
-        </Border>
 
-        <!-- 内容区：启动页 -->
-        <Grid Grid.Column="1" RowDefinitions="Auto,Auto,Auto,*,Auto" Margin="16,12">
-            <StackPanel Grid.Row="0" Spacing="10" Orientation="Horizontal">
-                <TextBlock Text="实例：" VerticalAlignment="Center" />
-                <ComboBox x:Name="InstanceCombo" MinWidth="260"
-                          ItemsSource="{Binding InstanceNames}"
-                          SelectedIndex="0" />
-                <controls:MyButton Text="刷新" Command="{Binding RefreshInstances}" VerticalAlignment="Center" />
-            </StackPanel>
+            <!-- 中：子页标题（进入子页后替换主导航与 logo，对应 WPF PanTitleInner：贴左缘） -->
+            <Panel x:Name="PanTitleInner" IsVisible="False" HorizontalAlignment="Left">
+                <controls:MyIconButton x:Name="BtnTitleInner" Theme="White"
+                                       SvgIcon="lucide/arrow-left" LogoScale="0.87"
+                                       Height="28" Width="28" HorizontalAlignment="Left"
+                                       VerticalAlignment="Center" Margin="12,0,0,0" />
+                <TextBlock x:Name="LabTitleInner" Text="实例选择" Foreground="White"
+                           FontSize="15" VerticalAlignment="Center"
+                           HorizontalAlignment="Left" Margin="47,1,0,0" IsHitTestVisible="False" />
+            </Panel>
 
-            <StackPanel Grid.Row="1" Spacing="8" Margin="0,12,0,0" Orientation="Horizontal">
-                <controls:MyButton x:Name="LaunchButton" Text="启动" FontSize="16" Padding="28,8"
-                                   Command="{Binding Launch}" />
-                <controls:MyButton Text="终止" Command="{Binding KillGame}" VerticalAlignment="Center" />
-                <ProgressBar x:Name="LaunchProgress" Width="220" Height="18" VerticalAlignment="Center"
-                             Minimum="0" Maximum="1" Value="{Binding LaunchProgress}" />
-            </StackPanel>
+            <!-- 右：最小化 / 关闭（右列内贴右缘） -->
+            <controls:MyIconButton Grid.Column="2" x:Name="BtnTitleClose" HorizontalAlignment="Right"
+                                   Height="28" VerticalAlignment="Center" Width="28"
+                                   Margin="0,0,12,0" Theme="White" SvgIcon="lucide/x" />
+            <controls:MyIconButton Grid.Column="2" x:Name="BtnTitleMin" HorizontalAlignment="Right"
+                                   Height="28" VerticalAlignment="Center" Width="28"
+                                   Margin="0,0,44,0" Theme="White" SvgIcon="lucide/minus" />
+        </Grid>
 
-            <!-- 控件库演示（可折叠，默认收起） -->
-            <ContentControl Grid.Row="2" Margin="0,12,0,0" Content="{Binding DemoCard}" />
-
-            <TextBox Grid.Row="3" x:Name="LogBox" Margin="0,12,0,0" IsReadOnly="True"
-                     Text="{Binding LaunchLog}" FontFamily="Mono,Menlo,Consolas,monospace"
-                     FontSize="12" TextWrapping="NoWrap" AcceptsReturn="True"
-                     VerticalContentAlignment="Top" />
-
-            <TextBlock Grid.Row="4" Text="{Binding HintText}" FontSize="12" Opacity="0.75"
-                       TextWrapping="Wrap" Margin="0,8,0,0" />
+        <!-- ===== 内容区（浅蓝渐变背板：对齐 Windows 版左上淡蓝 → 右下近白） ===== -->
+        <Grid Grid.Row="1" ColumnDefinitions="Auto,*">
+            <Grid.Background>
+                <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+                    <GradientStop Color="#C9E3F9" Offset="0" />
+                    <GradientStop Color="#DFF0FC" Offset="0.45" />
+                    <GradientStop Color="#FBFDFF" Offset="1" />
+                </LinearGradientBrush>
+            </Grid.Background>
+            <!-- 左栏背景（宽度跟随左页，与 WPF RectLeftBackground 同构） -->
+            <Border Grid.Column="0" IsHitTestVisible="False"
+                    Background="{DynamicResource ColorBrushTransparentBackground}" />
+            <!-- 左页 -->
+            <ContentControl Grid.Column="0" x:Name="PanMainLeft" />
+            <!-- 左栏右缘阴影（WPF RectLeftShadow：宽 4、黑 0.04 渐变） -->
+            <Rectangle Grid.Column="1" Width="4" HorizontalAlignment="Left"
+                       IsHitTestVisible="False">
+                <Rectangle.Fill>
+                    <LinearGradientBrush StartPoint="0,0.5" EndPoint="1,0.5" Opacity="0.04">
+                        <GradientStop Color="#000000" Offset="0" />
+                        <GradientStop Color="#00000000" Offset="1" />
+                    </LinearGradientBrush>
+                </Rectangle.Fill>
+            </Rectangle>
+            <!-- 右页 -->
+            <ContentControl Grid.Column="1" x:Name="PanMainRight" />
         </Grid>
     </Grid>
-
-    <Window.Styles>
-        <Style Selector="Button.nav">
-            <Setter Property="HorizontalAlignment" Value="Stretch" />
-            <Setter Property="HorizontalContentAlignment" Value="Left" />
-            <Setter Property="Padding" Value="12,8" />
-            <Setter Property="Margin" Value="0,1" />
-            <Setter Property="CornerRadius" Value="6" />
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="BorderThickness" Value="0" />
-        </Style>
-        <Style Selector="Button.nav:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background" Value="#E4E4E4" />
-        </Style>
-        <Style Selector="Button.launch">
-            <Setter Property="CornerRadius" Value="8" />
-            <Setter Property="Background" Value="#3A7BD5" />
-            <Setter Property="Foreground" Value="White" />
-        </Style>
-        <Style Selector="Button.launch:pointerover">
-            <Setter Property="Background" Value="#2E66B8" />
-        </Style>
-    </Window.Styles>
 </Window>

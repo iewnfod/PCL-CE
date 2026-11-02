@@ -23,10 +23,14 @@ public class AvaloniaHintPresenter : Panel, IHintPresenter
     public AvaloniaHintPresenter()
     {
         IsHitTestVisible = false;
-        _layer = new Panel
+        _layer = new StackPanel
         {
+            Orientation = Orientation.Vertical,
+            Spacing = 8,
             VerticalAlignment = VerticalAlignment.Bottom,
-            HorizontalAlignment = HorizontalAlignment.Center,
+            // 对齐 WPF：右下角堆叠、右缘对齐，留白 18/20
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Margin = new Thickness(0, 0, 18, 20),
         };
         Children.Add(_layer);
     }
@@ -62,9 +66,7 @@ public class AvaloniaHintPresenter : Panel, IHintPresenter
 
     private void _Relayout()
     {
-        // 自底向上堆叠
-        for (var i = 0; i < _activeBars.Count; i++)
-            _activeBars[i].Margin = new Thickness(0, 0, 0, i * 52);
+        // StackPanel 自动堆叠，无需手动定位
     }
 
     /// <summary>单条提示栏：圆角条 + 文本 + 关闭按钮；错误红底、常规主题色底。</summary>
@@ -76,50 +78,89 @@ public class AvaloniaHintPresenter : Panel, IHintPresenter
         {
             Hint = hint;
             CornerRadius = new CornerRadius(6);
-            Padding = new Thickness(14, 10);
+            Padding = new Thickness(14, 8);
             MinWidth = 160;
             MaxWidth = 480;
             ZIndex = 1000;
             IsHitTestVisible = true;
-            BoxShadow = BoxShadows.Parse("0 2 6 0");
+            BoxShadow = new BoxShadows(new BoxShadow { OffsetY = 2, Blur = 6 });
 
-            var isError = hint.Kind == HintKind.Error;
+            var kind = hint.Kind;
             var text = new TextBlock
             {
                 Text = hint.Message,
                 TextWrapping = TextWrapping.Wrap,
                 MaxLines = 3,
+                VerticalAlignment = VerticalAlignment.Center,
             };
+            // 统一白底；不同类型仅左侧圆形图标不同（×/✓/!/i）
+            var (iconColor, iconName, foreColor) = kind switch
+            {
+                HintKind.Error => ("#D9534F", "lucide/x", "#C0392B"),
+                HintKind.Success => ("#2E9E5B", "lucide/circle-check", "#1E7A43"),
+                HintKind.Warning => ("#E8A23D", "lucide/triangle-alert", "#9A6A15"),
+                _ => ("#3B82F6", "lucide/info", "#1D5FCC"),
+            };
+            var prefix = new Border
+            {
+                Width = 18,
+                Height = 18,
+                CornerRadius = new CornerRadius(9),
+                Background = new ImmutableSolidColorBrush(Color.Parse(iconColor)),
+                VerticalAlignment = VerticalAlignment.Center,
+                Child = new SvgIcon
+                {
+                    Icon = iconName,
+                    Width = 10,
+                    Height = 10,
+                    IconBrush = Brushes.White,
+                },
+            };
+            // 轻量关闭按钮（WPF MyHint 同款小尺寸，避免 Fluent 默认 32 高把提示条撑高）
             var dismissButton = new Button
             {
                 Content = "✕",
                 FontSize = 11,
-                Padding = new Thickness(4),
-                MinHeight = 22,
-                VerticalAlignment = VerticalAlignment.Top,
+                Padding = new Thickness(4, 1),
+                MinHeight = 20,
+                MinWidth = 20,
+                VerticalAlignment = VerticalAlignment.Center,
+                HorizontalAlignment = HorizontalAlignment.Right,
+                Background = Brushes.Transparent,
+                BorderThickness = new Thickness(0),
             };
             dismissButton.Click += (_, _) => dismiss(hint);
 
-            Child = new StackPanel
+            // 统一白底 + 类型色文字
+            Background = new ImmutableSolidColorBrush(Color.Parse("#FFFFFF"));
+            text.Foreground = new ImmutableSolidColorBrush(Color.Parse(foreColor));
+            dismissButton.Foreground = new ImmutableSolidColorBrush(Color.Parse("#8A8A8A"));
+
+            var contentPanel = new StackPanel
             {
                 Orientation = Orientation.Horizontal,
                 Spacing = 10,
                 Children = { text, dismissButton }
             };
+            // 图标在左、内容在右
+            Child = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Spacing = 10,
+                VerticalAlignment = VerticalAlignment.Center,
+                Children = { prefix, contentPanel }
+            };
 
-            // 类型配色：错误浅红底；其余用主题色 ColorBrush1 + 白字
-            var app = Application.Current;
-            if (isError)
+            // 自动消失（对齐 WPF hint 行为：普通 6s / 错误 9s，避免提示条遮挡界面）
+            var timeout = kind == HintKind.Error ? 9 : 6;
+            var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(timeout) };
+            timer.Tick += (_, _) =>
             {
-                Background = new ImmutableSolidColorBrush(Color.Parse("#FDECEC"));
-                text.Foreground = new ImmutableSolidColorBrush(Color.Parse("#C0392B"));
-            }
-            else if (app?.Resources.TryGetResource("ColorBrush1", app.ActualThemeVariant, out var back) == true &&
-                     back is IBrush brush)
-            {
-                Background = brush;
-                text.Foreground = Brushes.White;
-            }
+                timer.Stop();
+                dismiss(hint);
+            };
+            timer.Start();
+            DetachedFromVisualTree += (_, _) => timer.Stop();
         }
     }
 }
@@ -131,9 +172,21 @@ public static class HintPresenterBridge
     {
         if (HintService.Instance.Presenter is AvaloniaHintPresenter) return;
         var presenter = new AvaloniaHintPresenter();
-        // 覆盖层：铺满窗口（pointer 穿透），提示条在层内自排版
+        // 覆盖层：铺满窗口（pointer 穿透），提示条在层内自排版。
+        // 根布局是 Grid（48,*）时必须铺满全部行，否则提示条被限制在标题栏行内（显示在右上角）
         if (window.Content is Panel root)
+        {
             root.Children.Add(presenter);
+            if (root is global::Avalonia.Controls.Grid grid)
+            {
+                var rows = Math.Max(grid.RowDefinitions.Count, 1);
+                global::Avalonia.Controls.Grid.SetRow(presenter, 0);
+                global::Avalonia.Controls.Grid.SetRowSpan(presenter, rows);
+            }
+
+            presenter.SetValue(global::Avalonia.Controls.Panel.ZIndexProperty, 1000);
+        }
+
         HintService.Instance.Presenter = presenter;
     }
 }
