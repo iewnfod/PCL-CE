@@ -4,5 +4,7 @@
              RequestedThemeVariant="Light">
     <Application.Styles>
         <FluentTheme />
+        <StyleInclude Source="avares://PCL.CE.Avalonia/Controls/PclStyles.axaml" />
+        <StyleInclude Source="avares://PCL.CE.Avalonia/Controls/Themes/MyCard.axaml" />
     </Application.Styles>
 </Application>

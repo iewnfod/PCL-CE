@@ -1,0 +1,156 @@
+<!--
+    PCL 视觉语言全局样式：基于 ThemeService 注入的 DynamicResource 颜色资源
+    （ColorBrush1-8 主题色 / ColorBrushGray1-8 灰度 / ColorBrushBackground 背景）
+    覆盖 Fluent 默认主题，使原生控件呈现 PCL 风格。
+-->
+<Styles
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ================ 按钮 ================ -->
+    <Design.PreviewWith>
+        <StackPanel Margin="20" Spacing="10">
+            <Button Content="主按钮" Classes="primary" />
+            <Button Content="普通按钮" />
+            <Button Content="强调色文字按钮" Classes="accent" />
+        </StackPanel>
+    </Design.PreviewWith>
+
+    <Style Selector="Button">
+        <Setter Property="Background" Value="{DynamicResource ColorBrushGray3}" />
+        <Setter Property="Foreground" Value="{DynamicResource ColorBrushMemory}" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="CornerRadius" Value="6" />
+        <Setter Property="Padding" Value="14,7" />
+        <Setter Property="FontWeight" Value="Medium" />
+        <Setter Property="MinHeight" Value="32" />
+        <Setter Property="Transitions">
+            <Transitions>
+                <DoubleTransition Property="Opacity" Duration="0:0:0.12" />
+            </Transitions>
+        </Setter>
+    </Style>
+    <Style Selector="Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource ColorBrushGray4}" />
+        <Setter Property="Foreground" Value="{DynamicResource ColorBrushMemory}" />
+    </Style>
+    <Style Selector="Button:pressed /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource ColorBrushGray2}" />
+    </Style>
+    <Style Selector="Button:disabled /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource ColorBrushGray2}" />
+        <Setter Property="Foreground" Value="{DynamicResource ColorBrushHalfWhite}" />
+    </Style>
+
+    <!-- 主按钮：主题色 -->
+    <Style Selector="Button.primary">
+        <Setter Property="Background" Value="{DynamicResource ColorBrush1}" />
+        <Setter Property="Foreground" Value="{DynamicResource ColorBrushWhite}" />
+    </Style>
+    <Style Selector="Button.primary:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource ColorBrush2}" />
+        <Setter Property="Foreground" Value="{DynamicResource ColorBrushWhite}" />
+    </Style>
+    <Style Selector="Button.primary:pressed /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource ColorBrush3}" />
+    </Style>
+    <Style Selector="Button.primary:disabled /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource ColorBrushBg0}" />
+        <Setter Property="Foreground" Value="{DynamicResource ColorBrushHalfWhite}" />
+    </Style>
+
+    <!-- 强调色文字按钮 -->
+    <Style Selector="Button.accent">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource ColorBrush1}" />
+    </Style>
+    <Style Selector="Button.accent:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource ColorBrushBg0}" />
+        <Setter Property="Foreground" Value="{DynamicResource ColorBrush2}" />
+    </Style>
+
+    <!-- ================ 输入 ================ -->
+    <Style Selector="TextBox">
+        <Setter Property="Background" Value="{DynamicResource ColorBrushBackground}" />
+        <Setter Property="Foreground" Value="{DynamicResource ColorBrushMemory}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource ColorBrushGray4}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="6" />
+        <Setter Property="Padding" Value="8,5" />
+        <Setter Property="MinHeight" Value="32" />
+        <Setter Property="SelectionBrush" Value="{DynamicResource ColorBrush3}" />
+    </Style>
+    <Style Selector="TextBox:focus">
+        <Setter Property="BorderBrush" Value="{DynamicResource ColorBrush1}" />
+    </Style>
+    <Style Selector="TextBox:pointerover">
+        <Setter Property="BorderBrush" Value="{DynamicResource ColorBrushGray5}" />
+    </Style>
+
+    <Style Selector="CheckBox">
+        <Setter Property="Foreground" Value="{DynamicResource ColorBrushMemory}" />
+    </Style>
+
+    <Style Selector="RadioButton">
+        <Setter Property="Foreground" Value="{DynamicResource ColorBrushMemory}" />
+    </Style>
+
+    <!-- ================ 滑块 ================ -->
+    <Style Selector="Slider:horizontal">
+        <Setter Property="Height" Value="24" />
+    </Style>
+
+    <!-- ================ 列表 ================ -->
+    <Style Selector="ComboBox">
+        <Setter Property="Background" Value="{DynamicResource ColorBrushBackground}" />
+        <Setter Property="Foreground" Value="{DynamicResource ColorBrushMemory}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource ColorBrushGray4}" />
+        <Setter Property="CornerRadius" Value="6" />
+        <Setter Property="MinHeight" Value="32" />
+    </Style>
+    <Style Selector="ComboBoxItem">
+        <Setter Property="CornerRadius" Value="4" />
+        <Setter Property="Padding" Value="10,6" />
+    </Style>
+    <Style Selector="ComboBoxItem:pointerover">
+        <Setter Property="Background" Value="{DynamicResource ColorBrushGray3}" />
+    </Style>
+    <Style Selector="ComboBoxItem:selected">
+        <Setter Property="Background" Value="{DynamicResource ColorBrushBg0}" />
+        <Setter Property="Foreground" Value="{DynamicResource ColorBrush1}" />
+    </Style>
+
+    <Style Selector="ListBoxItem">
+        <Setter Property="CornerRadius" Value="4" />
+        <Setter Property="Padding" Value="10,6" />
+    </Style>
+    <Style Selector="ListBoxItem:pointerover">
+        <Setter Property="Background" Value="{DynamicResource ColorBrushGray3}" />
+    </Style>
+    <Style Selector="ListBoxItem:selected">
+        <Setter Property="Background" Value="{DynamicResource ColorBrushBg0}" />
+        <Setter Property="Foreground" Value="{DynamicResource ColorBrush1}" />
+    </Style>
+
+    <!-- ================ 滚动条（细化）================ -->
+    <Style Selector="ScrollBar:vertical">
+        <Setter Property="Width" Value="8" />
+    </Style>
+    <Style Selector="ScrollBar:horizontal">
+        <Setter Property="Height" Value="8" />
+    </Style>
+    <Style Selector="ScrollBar Thumb">
+        <Setter Property="Background" Value="{DynamicResource ColorBrushGray4}" />
+        <Setter Property="CornerRadius" Value="4" />
+    </Style>
+    <Style Selector="ScrollBar Thumb:pointerover">
+        <Setter Property="Background" Value="{DynamicResource ColorBrushGray5}" />
+    </Style>
+
+    <!-- ================ 提示条（MyHint 基础样式）================ -->
+    <Style Selector="Border.hint">
+        <Setter Property="CornerRadius" Value="6" />
+        <Setter Property="Padding" Value="12,8" />
+        <Setter Property="Background" Value="{DynamicResource ColorBrushBg0}" />
+    </Style>
+</Styles>

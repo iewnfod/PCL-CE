@@ -1,0 +1,51 @@
+<Styles
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:PCL.Avalonia.Controls">
+
+    <Styles.Resources>
+        <ControlTheme x:Key="{x:Type controls:MyCard}"
+                      TargetType="controls:MyCard">
+
+    <Setter Property="Template">
+        <ControlTemplate>
+            <Border Background="{DynamicResource ColorBrushBackground}"
+                    CornerRadius="8"
+                    BoxShadow="0 1 3 0 #22000000"
+                    ClipToBounds="True">
+                <Grid RowDefinitions="Auto,*" Margin="14,12">
+                    <!-- 标题行 -->
+                    <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,6"
+                          IsVisible="{TemplateBinding Title, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                        <ToggleButton x:Name="PART_Expander" Grid.Column="0" Grid.ColumnSpan="3"
+                                      Background="Transparent" BorderThickness="0" Padding="0"
+                                      HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                                      IsVisible="{TemplateBinding CanToggle}"
+                                      Focusable="False">
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                <TextBlock Grid.Column="0" Text="{TemplateBinding Title}" FontWeight="Bold"
+                                           FontSize="14" VerticalAlignment="Center"
+                                           Foreground="{DynamicResource ColorBrushMemory}" />
+                                <Panel Grid.Column="1" />
+                                <Path Grid.Column="2" Data="M 0 0 L 4 4 L 8 0 Z"
+                                      Fill="{DynamicResource ColorBrush5}"
+                                      VerticalAlignment="Center" Margin="6,4,2,0"
+                                      IsVisible="{TemplateBinding CanToggle}" />
+                            </Grid>
+                        </ToggleButton>
+                        <TextBlock Grid.Column="0" Text="{TemplateBinding Title}" FontWeight="Bold" FontSize="14"
+                                   VerticalAlignment="Center" Foreground="{DynamicResource ColorBrushMemory}"
+                                   IsVisible="{TemplateBinding CanToggle, Converter={x:Static ObjectConverters.IsNull}}" />
+                        <ContentControl Grid.Column="2" Content="{TemplateBinding TitleRight}"
+                                        VerticalAlignment="Center" Margin="8,0,0,0" />
+                    </Grid>
+                    <!-- 内容：折叠时隐藏（IsExpanded 默认 true，CanToggle=False 时恒可见） -->
+                    <ContentPresenter Grid.Row="1" Content="{TemplateBinding Content}"
+                                      IsVisible="{TemplateBinding IsExpanded}" />
+                </Grid>
+            </Border>
+        </ControlTemplate>
+    </Setter>
+        </ControlTheme>
+    </Styles.Resources>
+</Styles>

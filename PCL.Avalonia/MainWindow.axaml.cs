@@ -7,6 +7,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Threading;
 using PCL.Avalonia.Platform;
+using PCL.Avalonia.Controls;
 using PCL.Core.App.IoC;
 using PCL.Core.Minecraft;
 
@@ -20,6 +21,7 @@ public partial class MainWindow : Window
         var viewModel = new MainWindowViewModel();
         DataContext = viewModel;
         viewModel.InitUi(this);
+        Loaded += (_, _) => HintPresenterBridge.Install(this);
     }
 }
 
@@ -65,6 +67,14 @@ public partial class MainWindowViewModel : INotifyPropertyChanged
 
     public ObservableCollection<string> InstanceNames { get; } = [];
 
+    /// <summary>控件库演示卡片（任务 5 验收用，默认折叠）。</summary>
+    public Controls.MyCard DemoCard { get; } = new()
+    {
+        Title = "控件库演示（点击展开）",
+        CanToggle = true,
+        IsExpanded = false,
+    };
+
     public event PropertyChangedEventHandler? PropertyChanged;
 
     private void OnPropertyChanged(string name) =>
@@ -74,6 +84,7 @@ public partial class MainWindowViewModel : INotifyPropertyChanged
     public void InitUi(Window window)
     {
         _instanceCombo = window.FindControl<ComboBox>("InstanceCombo");
+        _BuildDemoContent();
 
         UiBridgeHub.LaunchLogAppended += text => Dispatcher.UIThread.Post(() =>
         {
@@ -220,6 +231,70 @@ public partial class MainWindowViewModel : INotifyPropertyChanged
         {
             HintText = $"终止失败：{ex.Message}";
         }
+    }
+
+    private void _BuildDemoContent()
+    {
+        DemoCard.Content = new StackPanel
+        {
+            Spacing = 10,
+            Children =
+            {
+                new StackPanel
+                {
+                    Orientation = Orientation.Horizontal, Spacing = 10,
+                    Children =
+                    {
+                        new Button { Content = "主按钮", Classes = { "primary" } },
+                        new Button { Content = "普通按钮" },
+                        new Button { Content = "文字按钮", Classes = { "accent" } },
+                    }
+                },
+                new TextBox { Watermark = "输入框（聚焦显示主题色边框）" },
+                new CheckBox { Content = "复选框" },
+                new StackPanel
+                {
+                    Orientation = Orientation.Horizontal, Spacing = 10,
+                    Children =
+                    {
+                        new Controls.MyLoading(),
+                        _HintButton("成功提示", PCL.Core.UI.Hints.HintKind.Success),
+                        _HintButton("错误提示", PCL.Core.UI.Hints.HintKind.Error),
+                        _MsgBoxButton(),
+                    }
+                },
+            }
+        };
+    }
+
+    private static Button _HintButton(string text, PCL.Core.UI.Hints.HintKind kind)
+    {
+        var button = new Button { Content = text };
+        button.Click += (_, _) =>
+            PCL.Core.UI.Hints.HintService.Show(new PCL.Core.UI.Hints.HintRequest
+            {
+                Message = kind == PCL.Core.UI.Hints.HintKind.Error ? "演示错误：这是 Error 提示条" : "演示成功：这是 Success 提示条",
+                Kind = kind,
+            });
+        return button;
+    }
+
+    private static Button _MsgBoxButton()
+    {
+        var button = new Button { Content = "消息弹窗", Classes = { "primary" } };
+        button.Click += async (_, _) =>
+        {
+            var choice = await Controls.MyMsgBox.ShowAsync(
+                "这是 MyMsgBox 弹窗正文，支持多行文本与多个按钮。",
+                "消息弹窗",
+                ["确定", "取消"]);
+            PCL.Core.UI.Hints.HintService.Show(new PCL.Core.UI.Hints.HintRequest
+            {
+                Message = $"你选择了：{choice}",
+                Kind = PCL.Core.UI.Hints.HintKind.Success,
+            });
+        };
+        return button;
     }
 
     private static string _BuildReadyText()
