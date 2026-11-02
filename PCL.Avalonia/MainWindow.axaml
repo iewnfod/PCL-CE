@@ -1,34 +1,52 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:local="using:PCL.Avalonia"
         x:Class="PCL.Avalonia.MainWindow"
         Title="Plain Craft Launcher CE"
         Width="920" Height="600"
         WindowStartupLocation="CenterScreen"
         MinWidth="760" MinHeight="480">
 
-    <Panel>
-        <!-- 标题栏拖拽区 + 装饰（系统装饰暂用默认，自绘标题栏在控件库阶段实现） -->
-        <Grid ColumnDefinitions="220,*">
-            <!-- 左侧导航栏 -->
-            <Border Grid.Column="0" Background="#F2F2F2" Name="LeftPane" ZIndex="0">
-                <StackPanel Margin="8,32,8,12" Spacing="4">
-                    <TextBlock Text="PCL CE" FontSize="20" FontWeight="Bold" Margin="12,0,0,10" />
-                    <Button Content="主页" Classes="nav" Command="{Binding NavigateHome}" />
-                    <Button Content="启动" Classes="nav" Command="{Binding NavigateLaunch}" />
-                    <Button Content="下载" Classes="nav" Command="{Binding NavigateDownload}" />
-                    <Button Content="设置" Classes="nav" Command="{Binding NavigateSetup}" />
-                    <Panel />
-                    <TextBlock Text="{Binding StatusText}" FontSize="11" Opacity="0.55"
-                               Margin="12,0,0,0" TextWrapping="Wrap" />
-                </StackPanel>
-            </Border>
-            <!-- 内容区 -->
-            <Border Grid.Column="1" Name="ContentRoot">
-                <ContentControl Content="{Binding CurrentPage}" />
-            </Border>
+    <Grid ColumnDefinitions="220,*">
+        <!-- 左侧导航栏 -->
+        <Border Grid.Column="0" Background="#F2F2F2">
+            <StackPanel Margin="8,32,8,12" Spacing="4">
+                <TextBlock Text="PCL CE" FontSize="20" FontWeight="Bold" Margin="12,0,0,10" />
+                <Button Content="主页" Classes="nav" />
+                <Button Content="下载" Classes="nav" />
+                <Button Content="设置" Classes="nav" />
+                <Panel />
+                <TextBlock Text="{Binding StatusText}" FontSize="11" Opacity="0.55"
+                           Margin="12,0,0,0" TextWrapping="Wrap" />
+            </StackPanel>
+        </Border>
+
+        <!-- 内容区：启动页 -->
+        <Grid Grid.Column="1" RowDefinitions="Auto,Auto,*,Auto" Margin="16,12">
+            <StackPanel Grid.Row="0" Spacing="10" Orientation="Horizontal">
+                <TextBlock Text="实例：" VerticalAlignment="Center" />
+                <ComboBox x:Name="InstanceCombo" MinWidth="260"
+                          ItemsSource="{Binding InstanceNames}"
+                          SelectedIndex="0" />
+                <Button Content="刷新" Command="{Binding RefreshInstances}" />
+            </StackPanel>
+
+            <StackPanel Grid.Row="1" Spacing="8" Margin="0,12,0,0" Orientation="Horizontal">
+                <Button x:Name="LaunchButton" Content="启动" Classes="launch"
+                        Command="{Binding Launch}" FontSize="16" Padding="28,8" />
+                <Button Content="终止" Command="{Binding KillGame}" VerticalAlignment="Center" />
+                <ProgressBar x:Name="LaunchProgress" Width="220" Height="18" VerticalAlignment="Center"
+                             Minimum="0" Maximum="1" Value="{Binding LaunchProgress}" />
+            </StackPanel>
+
+            <TextBox Grid.Row="2" x:Name="LogBox" Margin="0,12,0,0" IsReadOnly="True"
+                     Text="{Binding LaunchLog}" FontFamily="Mono,Menlo,Consolas,monospace"
+                     FontSize="12" TextWrapping="NoWrap" AcceptsReturn="True"
+                     VerticalContentAlignment="Top" />
+
+            <TextBlock Grid.Row="3" Text="{Binding HintText}" FontSize="12" Opacity="0.75"
+                       TextWrapping="Wrap" Margin="0,8,0,0" />
         </Grid>
-    </Panel>
+    </Grid>
 
     <Window.Styles>
         <Style Selector="Button.nav">
@@ -42,6 +60,14 @@
         </Style>
         <Style Selector="Button.nav:pointerover /template/ ContentPresenter#PART_ContentPresenter">
             <Setter Property="Background" Value="#E4E4E4" />
+        </Style>
+        <Style Selector="Button.launch">
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Background" Value="#3A7BD5" />
+            <Setter Property="Foreground" Value="White" />
+        </Style>
+        <Style Selector="Button.launch:pointerover">
+            <Setter Property="Background" Value="#2E66B8" />
         </Style>
     </Window.Styles>
 </Window>

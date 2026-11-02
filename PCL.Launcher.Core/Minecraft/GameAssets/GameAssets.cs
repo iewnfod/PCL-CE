@@ -119,7 +119,7 @@ public static class GameAssets
         {
             if (GameFolders.mcFolderSelected is null)
                 throw new InvalidOperationException("尚未选择 Minecraft 文件夹");
-            if (!File.Exists($@"{GameFolders.mcFolderSelected}assets\indexes\{indexName}.json"))
+            if (!File.Exists(Path.Combine(GameFolders.mcFolderSelected, "assets", "indexes", $"{indexName}.json")))
                 throw new FileNotFoundException(
                     Lang.Text("Minecraft.Error.AssetIndexNotFound"),
                     Path.Combine(
@@ -130,7 +130,7 @@ public static class GameAssets
             var result = new List<McAssetsToken>();
             var json = (JsonObject)LauncherCommon.GetJson(
                 LauncherCommon.ReadFile(
-                    $@"{GameFolders.mcFolderSelected}assets\indexes\{indexName}.json"));
+                    Path.Combine(GameFolders.mcFolderSelected, "assets", "indexes", $"{indexName}.json")));
 
             var objects = json["objects"]?.AsObject()
                 ?? throw new InvalidOperationException("资源索引缺少 objects 字段");

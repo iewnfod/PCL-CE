@@ -40,13 +40,19 @@ public static class GameFolders
         };
 
     /// <summary>
-    ///     当前的 Minecraft 文件夹路径，以"\"结尾。
+    ///     当前的 Minecraft 文件夹路径，以目录分隔符结尾。
     /// </summary>
     public static string? mcFolderSelected
     {
         get => _mcFolderSelected;
         set
         {
+            // 规范化：保证以平台目录分隔符结尾（业务层存在大量 "{mcFolderSelected}xxx" 直接拼接）
+            if (!string.IsNullOrEmpty(value))
+            {
+                var separator = System.IO.Path.DirectorySeparatorChar;
+                value = value.TrimEnd(separator) + separator;
+            }
             _mcFolderSelected = value;
             LauncherPaths.MinecraftFolder = value;
         }

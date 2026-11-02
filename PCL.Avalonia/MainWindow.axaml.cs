@@ -1,9 +1,12 @@
+using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Threading;
+using PCL.Avalonia.Platform;
 using PCL.Core.App.IoC;
 using PCL.Core.Minecraft;
 
@@ -14,50 +17,74 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        DataContext = new MainWindowViewModel();
+        var viewModel = new MainWindowViewModel();
+        DataContext = viewModel;
+        viewModel.InitUi(this);
     }
 }
 
-/// <summary>主窗口最小视图模型：导航占位 + 生命周期状态。</summary>
+/// <summary>主窗口视图模型：实例选择、启动控制、日志与状态。</summary>
 public partial class MainWindowViewModel : INotifyPropertyChanged
 {
     private string _statusText = "正在初始化…";
+    private string _launchLog = "";
+    private string _hintText = "";
+    private double _launchProgress;
+    private bool _isLaunching;
+    private ComboBox? _instanceCombo;
 
     public string StatusText
     {
         get => _statusText;
-        private set { _statusText = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(StatusText))); }
+        private set { _statusText = value; OnPropertyChanged(nameof(StatusText)); }
     }
 
-    public object CurrentPage { get; } = new Grid
+    public string LaunchLog
     {
-        Children =
-        {
-            new StackPanel
-            {
-                VerticalAlignment = VerticalAlignment.Center,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                Spacing = 8,
-                Children =
-                {
-                    new TextBlock { Text = "PCL CE · Avalonia", FontSize = 28, FontWeight = FontWeight.Bold },
-                    new TextBlock { Text = "壳骨架运行中 —— 页面将在后续任务逐步移植", Opacity = 0.6 }
-                }
-            }
-        }
-    };
+        get => _launchLog;
+        private set { _launchLog = value; OnPropertyChanged(nameof(LaunchLog)); }
+    }
+
+    public string HintText
+    {
+        get => _hintText;
+        private set { _hintText = value; OnPropertyChanged(nameof(HintText)); }
+    }
+
+    public double LaunchProgress
+    {
+        get => _launchProgress;
+        private set { _launchProgress = value; OnPropertyChanged(nameof(LaunchProgress)); }
+    }
+
+    public bool IsLaunching
+    {
+        get => _isLaunching;
+        private set { _isLaunching = value; OnPropertyChanged(nameof(IsLaunching)); }
+    }
+
+    public ObservableCollection<string> InstanceNames { get; } = [];
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    public void NavigateHome() { }
-    public void NavigateLaunch() { }
-    public void NavigateDownload() { }
-    public void NavigateSetup() { }
+    private void OnPropertyChanged(string name) =>
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
-    public MainWindowViewModel()
+    /// <summary>绑定 UI 控件引用并挂事件（AXAML 绑定之外的命令式部分）。</summary>
+    public void InitUi(Window window)
     {
-        var dispatcher = Dispatcher.UIThread;
+        _instanceCombo = window.FindControl<ComboBox>("InstanceCombo");
 
+        UiBridgeHub.LaunchLogAppended += text => Dispatcher.UIThread.Post(() =>
+        {
+            LaunchLog += (LaunchLog.Length == 0 ? "" : "\n") + text;
+            if (LaunchLog.Length > 200_000) LaunchLog = LaunchLog[^100_000..];
+        });
+        UiBridgeHub.HintShown += (text, type) => Dispatcher.UIThread.Post(() =>
+            HintText = $"{DateTime.Now:HH:mm:ss} [{type}] {text}");
+        UiBridgeHub.LaunchProgressChanged += progress => Dispatcher.UIThread.Post(() => LaunchProgress = progress);
+
+        // 生命周期状态
         void ApplyState(LifecycleState state)
         {
             var text = state switch
@@ -66,12 +93,133 @@ public partial class MainWindowViewModel : INotifyPropertyChanged
                 LifecycleState.Closing or LifecycleState.Exiting => "正在退出…",
                 _ => $"正在初始化（{_StateName(state)}）…"
             };
-            dispatcher.Post(() => StatusText = text);
+            Dispatcher.UIThread.Post(() => StatusText = text);
         }
 
-        // 窗口在 WindowCreating 阶段创建，Running 尚未到达；若未来时序变化也能直接显示就绪
         if (Lifecycle.CurrentState >= LifecycleState.Running) ApplyState(LifecycleState.Running);
         else Lifecycle.StateChanged += ApplyState;
+
+        // 就绪后加载实例列表
+        Lifecycle.When(LifecycleState.Running, () =>
+        {
+            RefreshInstances();
+
+            // 自动启动（--launch <实例名>）：用于端到端自动化验证
+            if (Program.AutoLaunchInstance is { } name && InstanceNames.Contains(name))
+            {
+                Dispatcher.UIThread.Post(() =>
+                {
+                    if (_instanceCombo is not null)
+                        _instanceCombo.SelectedItem = name;
+                    Launch();
+                });
+            }
+        });
+    }
+
+    public void RefreshInstances()
+    {
+        InstanceNames.Clear();
+        try
+        {
+            // 扫描 MinecraftFolder/versions 下的有效实例
+            var versionsDir = Path.Combine(
+                GameFolders.mcFolderSelected ?? "", "versions");
+            if (Directory.Exists(versionsDir))
+            {
+                var names = Directory.GetDirectories(versionsDir)
+                    .Select(Path.GetFileName)
+                    .Where(n => n is not null)
+                    .OrderBy(n => n)
+                    .ToList();
+                foreach (var name in names!) InstanceNames.Add(name);
+            }
+        }
+        catch (Exception ex)
+        {
+            HintText = $"扫描实例失败：{ex.Message}";
+        }
+
+        if (InstanceNames.Count == 0)
+            HintText = $"未找到实例：请将版本文件夹放入 {GameFolders.mcFolderSelected}/versions/ 后点「刷新」";
+    }
+
+    public void Launch()
+    {
+        if (IsLaunching)
+        {
+            HintText = "已有启动任务正在进行";
+            return;
+        }
+
+        var name = _instanceCombo?.SelectedItem as string;
+        if (string.IsNullOrEmpty(name))
+        {
+            HintText = "请先选择实例";
+            return;
+        }
+
+        try
+        {
+            var instance = new McInstance(name);
+            instance.Load();
+            if (instance.state == McInstanceState.Error)
+            {
+                HintText = $"实例不可用：{instance.Desc}";
+                return;
+            }
+
+            IsLaunching = true;
+            LaunchProgress = 0;
+            StatusText = "正在启动…";
+
+            var ok = GameLaunch.McLaunchStart(new GameLaunch.McLaunchOptions { instance = instance });
+            if (!ok) IsLaunching = false;
+        }
+        catch (Exception ex)
+        {
+            HintText = $"启动失败：{ex.Message}";
+            IsLaunching = false;
+        }
+        finally
+        {
+            // 启动流程异步进行，结束时复位（简单起见由日志事件观察）
+            DispatcherTimer.RunOnce(() =>
+            {
+                if (GameLaunch.mcLaunchLoader.State != global::PCL.LoadState.Loading)
+                    IsLaunching = false;
+            }, TimeSpan.FromSeconds(5));
+            _watchLaunchState();
+        }
+    }
+
+    private async void _watchLaunchState()
+    {
+        await Task.Run(() =>
+        {
+            // 等待启动 loader 结束（成功/失败/中断都复位按钮）
+            while (GameLaunch.mcLaunchLoader.State == global::PCL.LoadState.Loading)
+                Thread.Sleep(500);
+        });
+        Dispatcher.UIThread.Post(() =>
+        {
+            IsLaunching = false;
+            var state = GameLaunch.mcLaunchLoader.State;
+            StatusText = state == global::PCL.LoadState.Finished ? "启动完成" : "就绪";
+        });
+    }
+
+    public void KillGame()
+    {
+        try
+        {
+            GameLaunch.mcLaunchProcess?.Kill(true);
+            HintText = "已请求终止游戏进程";
+        }
+        catch (Exception ex)
+        {
+            HintText = $"终止失败：{ex.Message}";
+        }
     }
 
     private static string _BuildReadyText()

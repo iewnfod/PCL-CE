@@ -48,18 +48,22 @@ public static partial class Libraries
         if (osNameNode is not null)
         {
             var osName = osNameNode.ToString();
-            switch (osName)
+            if (osName == "unknown")
             {
-                case "unknown":
-                    break;
-                case "windows":
+                // 全平台规则
+            }
+            else
+            {
+                // MC 版本 JSON 的 os.name 取值：windows / linux / osx
+                var currentOs = PCL.Core.Utils.OS.EnvironmentInterop.GetCurrentOsName();
+                if (!string.Equals(osName, currentOs, StringComparison.OrdinalIgnoreCase))
+                    return false;
+                if (osName == "windows")
+                {
                     var osVersionNode = os["version"];
                     if (osVersionNode is not null)
                         result = OsVersion.RegexCheck(osVersionNode.ToString());
-                    break;
-                default:
-                    result = false;
-                    break;
+                }
             }
         }
 
@@ -193,7 +197,7 @@ public static partial class Libraries
                 if (token is not null)
                     basicArray.Add(token);
             }
-            else if (library["natives"]?["windows"] is { } windows)
+            else if (library["natives"]?[EnvironmentInterop.GetCurrentOsName()] is { } native)
             {
                 var token = _BuildMcLibNativeToken(
                     library,
@@ -201,7 +205,7 @@ public static partial class Libraries
                     rootUrl,
                     isLocal,
                     customMcFolder,
-                    windows.ToString());
+                    native.ToString());
                 if (token is not null)
                     basicArray.Add(token);
             }
@@ -230,8 +234,8 @@ public static partial class Libraries
     {
         string localPath;
         if (isLocal && targetMcInstance is not null)
-            localPath =
-                $@"{targetMcInstance.PathInstance}libraries\{name.AfterFirst(":").Replace(":", "-")}.jar";
+            localPath = System.IO.Path.Combine(targetMcInstance.PathInstance, "libraries",
+                $"{name.AfterFirst(":").Replace(":", "-")}.jar");
         else
             localPath = McLibGet(name, customMcFolder: customMcFolder);
 
@@ -295,25 +299,25 @@ public static partial class Libraries
         string nativeName)
     {
         var classifiers = library["downloads"]?["classifiers"];
-        var nativesWindows = classifiers?["natives-windows"];
-        var nativePath = nativesWindows?["path"];
+        var nativesArtifact = classifiers?[nativeName];
+        var nativePath = nativesArtifact?["path"];
         var fallbackPath = McLibGet(name, customMcFolder: customMcFolder)
             .Replace(".jar", $"-{nativeName}.jar")
             .Replace("${arch}", Environment.Is64BitOperatingSystem ? "64" : "32");
         try
         {
-            if (nativesWindows is not null)
+            if (nativesArtifact is not null)
                 return new McLibToken
                 {
                     OriginalName = name,
-                    Url = rootUrl ?? (string?)nativesWindows["url"],
+                    Url = rootUrl ?? (string?)nativesArtifact["url"],
                     LocalPath = nativePath is null
                         ? fallbackPath
                         : McLibGetByArtifactPath(nativePath.ToString(), customMcFolder),
                     size = (long)Math.Round(
-                        LauncherText.Val(nativesWindows["size"]?.ToString() ?? "0")),
+                        LauncherText.Val(nativesArtifact["size"]?.ToString() ?? "0")),
                     IsNatives = true,
-                    Sha1 = nativesWindows["sha1"]?.ToString(),
+                    Sha1 = nativesArtifact["sha1"]?.ToString(),
                     IsLocal = isLocal
                 };
 

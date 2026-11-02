@@ -420,6 +420,8 @@ public static partial class GameLaunch
 
         gameProcess.Start();
         McLaunchLog($"已启动游戏进程：{startInfo.FileName}");
+        // 完整命令行落日志（Debug 级），便于跨平台问题排查
+        LauncherCommon.Log($"[Launch] 完整命令：{startInfo.FileName} {startInfo.Arguments}");
         if (loader.IsAborted)
         {
             McLaunchLog("由于取消启动，已强制结束游戏进程");
@@ -439,11 +441,14 @@ public static partial class GameLaunch
             (noJavaw ? installation.JavaExePath : installation.JavawExePath)
             ?? installation.JavaExePath);
 
-        var paths = new List<string>((startInfo.EnvironmentVariables["Path"] ?? "").Split(";"))
+        // Windows 环境变量名 Path/分号分隔；Unix 为 PATH/冒号分隔（字典区分大小写）
+        var pathKey = OperatingSystem.IsWindows() ? "Path" : "PATH";
+        var pathSeparator = OperatingSystem.IsWindows() ? ';' : ':';
+        var paths = new List<string>((startInfo.EnvironmentVariables[pathKey] ?? "").Split(pathSeparator))
         {
             LauncherCommon.ShortenPath(installation.JavaFolder)
         };
-        startInfo.EnvironmentVariables["Path"] = paths.Distinct().ToList().Join(";");
+        startInfo.EnvironmentVariables[pathKey] = paths.Distinct().ToList().Join(pathSeparator.ToString());
         startInfo.EnvironmentVariables["appdata"] = LauncherCommon.ShortenPath(
             GameFolders.mcFolderSelected!);
 

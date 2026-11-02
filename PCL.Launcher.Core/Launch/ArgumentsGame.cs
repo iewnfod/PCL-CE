@@ -154,7 +154,8 @@ public static partial class GameLaunch
 
         gameArguments.Add(
             "${game_assets}",
-            LauncherCommon.ShortenPath($@"{GameFolders.mcFolderSelected}assets\virtual\legacy"));
+            LauncherCommon.ShortenPath(Path.Combine(
+                GameFolders.mcFolderSelected ?? "", "assets", "virtual", "legacy")));
         gameArguments.Add("${assets_index_name}", GameAssets.McAssetsGetIndexName(instance));
 
         var libList = Libraries.McLibListGet(instance, true);
@@ -305,7 +306,9 @@ public static partial class GameLaunch
         if (optiFineCp is not null)
             cpStrings.Insert(cpStrings.Count - 2, optiFineCp);
 
-        return cpStrings.Select(c => LauncherCommon.ShortenPath(c)).Join(";");
+        // classpath 分隔符：Windows 分号，Unix 冒号
+        var classpathSeparator = OperatingSystem.IsWindows() ? ";" : ":";
+        return cpStrings.Select(c => LauncherCommon.ShortenPath(c)).Join(classpathSeparator);
     }
 
     public struct GameWindowSize(double width, double height)

@@ -8,7 +8,7 @@ public static partial class GameLaunch
 {
     private static void McLaunchNatives(Loading.LoaderTask<List<Libraries.McLibToken>, int> loader)
     {
-        var target = $@"{GetNativesFolder()}\";
+        var target = GetNativesFolder() + System.IO.Path.DirectorySeparatorChar;
         Directory.CreateDirectory(target);
 
         McLaunchLog("正在解压 Natives 文件");
@@ -39,10 +39,14 @@ public static partial class GameLaunch
 
         using (zip)
         {
+            // 平台原生库扩展名：Windows .dll / Linux .so / macOS .dylib
+            var nativeExtension = OperatingSystem.IsWindows() ? ".dll"
+                : OperatingSystem.IsMacOS() ? ".dylib"
+                : ".so";
             foreach (var entry in zip.Entries)
             {
                 var fileName = entry.FullName;
-                if (!fileName.EndsWithF(".dll", true))
+                if (!fileName.EndsWithF(nativeExtension, true))
                     continue;
 
                 var filePath = target + fileName;
