@@ -316,7 +316,7 @@ public class PageDownloadInstall : Grid
         void Fill(MyCard c)
         {
             if (c.Content is not null) return;
-            var stack = new StackPanel { Margin = new Thickness(20, 0, 18, 0) };
+            var stack = new StackPanel { Margin = new Thickness(20, 0, 18, 15) };
             foreach (var version in versions)
                 stack.Children.Add(_BuildVersionItem(version));
             c.Content = stack;
@@ -550,7 +550,7 @@ public class PageDownloadInstall : Grid
         {
             if (_selectedFabric is null)
                 _cardFabric.Title = _LoaderTitle("Fabric", versions.Count > 0);
-            var stack = new StackPanel { Margin = new Thickness(20, 0, 18, 0) };
+            var stack = new StackPanel { Margin = new Thickness(20, 0, 18, 15) };
             foreach (JsonObject entry in versions)
             {
                 var version = entry["version"]?.ToString() ?? "";
@@ -609,7 +609,7 @@ public class PageDownloadInstall : Grid
             .ToList() ?? [];
         if (_selectedForge is null)
             _cardForge.Title = _LoaderTitle("Forge", versions.Count > 0);
-        var stack = new StackPanel { Margin = new Thickness(20, 0, 18, 0) };
+        var stack = new StackPanel { Margin = new Thickness(20, 0, 18, 15) };
         foreach (var version in versions)
         {
             var item = new MyListItem
@@ -655,7 +655,7 @@ public class PageDownloadInstall : Grid
 
             if (_selectedNeoForge is null)
                 _cardNeoForge.Title = _LoaderTitle("NeoForge", true);
-            var stack = new StackPanel { Margin = new Thickness(20, 0, 18, 0) };
+            var stack = new StackPanel { Margin = new Thickness(20, 0, 18, 15) };
             foreach (var version in versions)
             {
                 var item = new MyListItem

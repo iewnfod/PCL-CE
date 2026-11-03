@@ -256,6 +256,7 @@ public class MyListItem : TemplatedControl
         _UpdateTags();
         _RefreshInfoVisibility();
         _RefreshCheckedForeground();
+        _RefreshCheckBar();
         _ApplyLayout();
     }
 
@@ -607,6 +608,27 @@ public class MyListItem : TemplatedControl
         };
     }
 
+    /// <summary>
+    ///     选中竖线样式（对齐 WPF ApplyType 选中静态值）：普通列表项（高 ≥40，如 Java 列表）
+    ///     竖线贯穿全高（上下各留 6px）；紧凑项（高 &lt;40，如侧边栏导航）保持 20px 居中短条。
+    /// </summary>
+    private void _RefreshCheckBar()
+    {
+        if (_checkBar is null) return;
+        if (Checked && Height >= 40d)
+        {
+            _checkBar.Height = double.NaN;
+            _checkBar.VerticalAlignment = VerticalAlignment.Stretch;
+            _checkBar.Margin = new Thickness(-1, 6, 0, 6);
+        }
+        else
+        {
+            _checkBar.Height = 20;
+            _checkBar.VerticalAlignment = VerticalAlignment.Center;
+            _checkBar.Margin = new Thickness(-1, 0, 0, 0);
+        }
+    }
+
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
@@ -614,7 +636,13 @@ public class MyListItem : TemplatedControl
         {
             PseudoClasses.Set(":checked", Checked);
             _RefreshCheckedForeground();
+            _RefreshCheckBar();
             _EnsureSingleChecked();
+        }
+        else if (change.Property == HeightProperty)
+        {
+            _RefreshCheckedForeground();
+            _RefreshCheckBar();
         }
     }
 
