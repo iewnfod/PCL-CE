@@ -97,6 +97,45 @@ public partial class MainWindow : Window
         Lifecycle.When(LifecycleState.Running, () => Dispatcher.UIThread.Post(_OnReady));
     }
 
+    /// <summary>
+    ///     任务 9 登录钩子（自动化验收）：PCL_LOGIN=offline:玩家名 时等档案服务就绪后创建离线档案并选择；
+    ///     同时输出微软 OAuth Client ID 配置状态（Debug 构建读 PCL_MS_CLIENT_ID 环境变量）。
+    ///     返回的 Task 在档案创建完成后结束（无钩子时立即完成）。
+    /// </summary>
+    private static Task _ApplyLoginHook()
+    {
+        var clientIdConfigured = !string.IsNullOrWhiteSpace(PCL.Core.App.Secrets.MSOAuthClientId);
+        Console.WriteLine($"[Login] 微软 OAuth Client ID：{(clientIdConfigured ? "已配置" : "未配置（PCL_MS_CLIENT_ID）")}");
+
+        var spec = Environment.GetEnvironmentVariable("PCL_LOGIN");
+        if (string.IsNullOrWhiteSpace(spec)) return Task.CompletedTask;
+        var parts = spec.Split(':', 2);
+        if (parts.Length != 2 || parts[0].Trim().ToLowerInvariant() != "offline") return Task.CompletedTask;
+        var playerName = parts[1].Trim();
+        if (playerName.Length == 0) return Task.CompletedTask;
+
+        return Task.Run(async () =>
+        {
+            for (var i = 0; i < 50 && !PCL.Core.Minecraft.Profile.ProfileService.IsLoaded; i++)
+                await Task.Delay(100);
+
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                var profile = new PCL.Core.Minecraft.Profile.Models.McProfile
+                {
+                    ProfileType = PCL.Core.Minecraft.Profile.Models.ProfileType.Offline,
+                    Uuid = Platform.AvaloniaProfileUi.GetOfflineUuid(playerName),
+                    UserName = playerName,
+                    AccessToken = Platform.AvaloniaProfileUi.GetOfflineUuid(playerName),
+                    ClientToken = Platform.AvaloniaProfileUi.GetOfflineUuid(playerName),
+                    ProfileId = Guid.NewGuid().ToString("N"),
+                };
+                PCL.Core.Minecraft.Profile.ProfileService.Add(profile, select: true);
+                Console.WriteLine($"[Login] PCL_LOGIN 已创建离线档案：{playerName}（{profile.Uuid}）");
+            });
+        });
+    }
+
     private void _HookNavButton(string name, MainTab tab)
     {
         var button = this.FindControl<MyRadioButton>(name)!;
@@ -109,11 +148,17 @@ public partial class MainWindow : Window
 
     private void _OnReady()
     {
+        // 任务 9：登录自动化钩子（PCL_LOGIN=offline:玩家名），供无交互环境验收离线登录全链路
+        var loginHook = _ApplyLoginHook();
+
         // 自动启动（--launch <实例名>）：用于端到端自动化验证（任务 4 验收链路）
         if (Program.AutoLaunchInstance is not { } name || _autoLaunchDone) return;
         _autoLaunchDone = true;
         _ = Task.Run(async () =>
         {
+            // 等登录钩子完成（PCL_LOGIN 创建档案），避免自动启动早于档案就绪
+            try { await loginHook; } catch { /* 钩子失败不阻塞启动 */ }
+
             // --launch 模式不经过实例选择页，需主动触发实例列表加载
             Loading.LoaderFolderRun(InstanceList.mcInstanceListLoader, GameFolders.mcFolderSelected,
                 Loading.LoaderFolderRunType.RunOnUpdated, 1,
@@ -214,7 +259,15 @@ public partial class MainWindow : Window
         _pageLaunchLeft ??= new PageLaunchLeft();
         _pageLaunchRight ??= new PageLaunchRight();
         _pageLaunchLeft.RefreshState();
+        _pageLaunchLeft.RefreshLogin();
         SetContent(_pageLaunchLeft, _pageLaunchRight);
+    }
+
+    /// <summary>档案状态变化（登录/选择/删除）：刷新启动按钮与登录区（供登录子页调用）。</summary>
+    public void NotifyProfileChanged()
+    {
+        _pageLaunchLeft?.RefreshState();
+        _pageLaunchLeft?.RefreshLogin();
     }
 
     private void _ShowInstanceSelectCore()

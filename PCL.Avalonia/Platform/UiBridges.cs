@@ -33,7 +33,7 @@ internal static class UiBridges
     {
         LaunchUi.Current = new AvaloniaLaunchUi();
         LauncherUi.Interaction = new AvaloniaUserInteraction();
-        LoginProfile.Current = new OfflineProfileUi("Player");
+        LoginProfile.Current = new AvaloniaProfileUi();
         WatcherUi.Current = new AvaloniaWatcherUi();
         MediaService.Current = new NoopMediaService();
         MemorySettings.Current = new AvaloniaMemorySettings();
@@ -51,22 +51,8 @@ internal static class UiBridges
             };
             UiBridgeHub.RaiseHint($"[{title ?? "提示"}] {text}", type);
         };
-
-        // MVP 默认档案：档案服务就绪后若无选中档案，注入一个离线档案（玩家名 Player）
-        PCL.Core.App.IoC.Lifecycle.When(PCL.Core.App.IoC.LifecycleState.Running, () =>
-        {
-            if (PCL.Core.Minecraft.Profile.ProfileService.Current is not null) return;
-            var uuid = OfflineProfileUi._GetOfflineUuid("Player");
-            PCL.Core.Minecraft.Profile.ProfileService.Add(new PCL.Core.Minecraft.Profile.Models.McProfile
-            {
-                UserName = "Player",
-                Uuid = uuid,
-                AccessToken = uuid,
-                TokenType = "Legacy",
-                ProfileType = PCL.Core.Minecraft.Profile.Models.ProfileType.Offline
-            }, select: true);
-            Console.WriteLine("[Profile] 已注入默认离线档案：Player");
-        });
+        // 任务 9：档案由登录页创建（离线/微软），不再自动注入默认离线档案。
+        // 无档案时左栏显示档案列表引导新建，启动按钮禁用（对齐 WPF 行为）。
     }
 }
 
@@ -141,41 +127,6 @@ internal sealed class AvaloniaUserInteraction : IUserInteraction
     {
         Console.WriteLine($"[Confirm] {title}: {text}（默认同意）");
         return true;
-    }
-}
-
-/// <summary>离线登录档案：固定玩家名，UUID 采用离线服务器标准算法（MD5("OfflinePlayer:"+name)）。</summary>
-internal sealed class OfflineProfileUi(string playerName) : IProfileUi
-{
-    public object? GetLoginData() => new GameLaunch.McLoginLegacy
-    {
-        LoginType = GameLaunch.McLoginType.Legacy,
-        UserName = playerName,
-        Uuid = _GetOfflineUuid(playerName)
-    };
-
-    public string IsProfileValid() => "";
-
-    public Task<AuthorizeResult?> ShowDeviceCodeLoginAsync(DeviceCodeAuthenticationContext context,
-        CancellationToken token)
-    {
-        // 离线档案不触发微软登录
-        return Task.FromResult<AuthorizeResult?>(null);
-    }
-
-    public bool HandleMicrosoftXstsError(IdentityModelAuthenticationException exception) => false;
-    public bool HandleMicrosoftNotOwnedError(IdentityModelAuthenticationException exception) => false;
-    public bool HandleMicrosoftCreateProfileError(IdentityModelAuthenticationException exception) => false;
-
-    /// <summary>与离线服务器一致的离线 UUID 算法：UUID v3(MD5, "OfflinePlayer:" + name)。</summary>
-    internal static string _GetOfflineUuid(string name)
-    {
-        var md5 = System.Security.Cryptography.MD5.HashData(
-            System.Text.Encoding.UTF8.GetBytes("OfflinePlayer:" + name));
-        // RFC 4122 version 3 变换
-        md5[6] = (byte)((md5[6] & 0x0F) | 0x30);
-        md5[8] = (byte)((md5[8] & 0x3F) | 0x80);
-        return new Guid(md5).ToString();
     }
 }
 

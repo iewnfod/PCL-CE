@@ -8,13 +8,15 @@ using Avalonia.Media;
 using Avalonia.Threading;
 using PCL.Avalonia.Controls;
 using PCL.Avalonia.Platform;
+using PCL.Avalonia.Pages.Login;
 using PCL.Core.App.Localization;
 
 namespace PCL.Avalonia.Pages;
 
 /// <summary>
-///     启动主页左侧页（复刻 WPF PageLaunchLeft）：登录区（头像 + 玩家名）居中、
-///     启动按钮（高 54、Highlight、下缘版本名 11px Gray3）、底部「实例选择 / 实例设置」按钮（高 35）。
+///     启动主页左侧页（复刻 WPF PageLaunchLeft）：登录区（任务 9：LoginPageHost 子页体系——
+///     档案列表 / 档案详情 / 微软登录 / 离线登录）、启动按钮（高 54、Highlight、下缘版本名 11px Gray3）、
+///     底部「实例选择 / 实例设置」按钮（高 35）。
 /// </summary>
 public class PageLaunchLeft : Grid
 {
@@ -40,6 +42,7 @@ public class PageLaunchLeft : Grid
     private readonly MyButton _btnInstance = new() { Height = 35, Margin = new Thickness(0, 10, 10, 0) };
     private readonly MyButton _btnMore = new() { Height = 35, Margin = new Thickness(0, 10, 10, 0) };
     private readonly Border _panLogin = new();
+    private readonly LoginPageHost _loginHost = new();
     private readonly ProgressBar _progress = new()
     {
         Height = 4, Margin = new Thickness(30, 12, 30, 0), Minimum = 0, Maximum = 1,
@@ -62,12 +65,12 @@ public class PageLaunchLeft : Grid
         ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
         ColumnDefinitions.Add(new ColumnDefinition(new GridLength(10)));
 
-        // 登录区（Row 1，居中）：头像 + 玩家名 + 档案类型
+        // 登录区（Row 1，居中）：登录子页体系（档案详情 / 列表 / 登录页）
         SetRow(_panLogin, 1);
         SetColumnSpan(_panLogin, 5);
         _panLogin.Margin = new Thickness(20, 0);
         _panLogin.VerticalAlignment = VerticalAlignment.Center;
-        _panLogin.Child = _BuildLoginPanel();
+        _panLogin.Child = _loginHost;
         Children.Add(_panLogin);
 
         // 启动按钮（Row 2）+ 版本名覆盖
@@ -115,85 +118,23 @@ public class PageLaunchLeft : Grid
 
         UiBridgeHub.LaunchProgressChanged += p => Dispatcher.UIThread.Post(() => _progress.Value = p);
         RefreshState();
+        RefreshLogin();
+
+        // 档案服务后台加载完成后刷新登录区（首次启动时 Load 在生命周期线程异步执行）
+        _ = Task.Run(async () =>
+        {
+            for (var i = 0; i < 40 && !PCL.Core.Minecraft.Profile.ProfileService.IsLoaded; i++)
+                await Task.Delay(100);
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                RefreshLogin();
+                RefreshState();
+            });
+        });
     }
 
-    /// <summary>登录区：圆形头像占位（lucide/user）+ 玩家名 + 档案说明。</summary>
-    private Control _BuildLoginPanel()
-    {
-        string userName;
-        string profileDesc;
-        try
-        {
-            var profile = PCL.Core.Minecraft.Profile.ProfileService.Current;
-            userName = profile?.UserName ?? "Player";
-            profileDesc = profile?.ProfileType == PCL.Core.Minecraft.Profile.Models.ProfileType.Microsoft
-                ? "微软账户"
-                : "离线账户";
-        }
-        catch
-        {
-            userName = "Player";
-            profileDesc = "离线账户";
-        }
-
-        var avatar = new Border
-        {
-            Width = 84,
-            Height = 84,
-            CornerRadius = new CornerRadius(42),
-            HorizontalAlignment = HorizontalAlignment.Center,
-            Child = new SvgIcon
-            {
-                Icon = "lucide/user",
-                Width = 44,
-                Height = 44,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center,
-            },
-        };
-        avatar.SetDynamic(Border.BackgroundProperty, "ColorBrush6");
-        avatar.Child.SetDynamic(SvgIcon.IconBrushProperty, "ColorBrush2");
-
-        return new StackPanel
-        {
-            HorizontalAlignment = HorizontalAlignment.Center,
-            Spacing = 8,
-            Children =
-            {
-                avatar,
-                new TextBlock
-                {
-                    Text = userName,
-                    FontSize = 19,
-                    FontWeight = FontWeight.Bold,
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                },
-                new TextBlock
-                {
-                    Text = profileDesc,
-                    FontSize = 12,
-                    Opacity = 0.6,
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                },
-                new MyButton
-                {
-                    Text = "切换账户",
-                    Height = 30,
-                    Margin = new Thickness(0, 6, 0, 0),
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                },
-            },
-        };
-        // 切换账户：挂点击（登录功能在任务 9，先给出可见反馈）
-        if (_panLogin.Child is StackPanel loginStack &&
-            loginStack.Children.LastOrDefault() is MyButton btnAccount)
-            btnAccount.Click += (_, _) =>
-                global::PCL.Core.UI.Hints.HintService.Show(new()
-                {
-                    Message = "账户切换与登录将在后续版本提供（当前使用离线档案 Player）",
-                    Kind = global::PCL.Core.UI.Hints.HintKind.Info,
-                });
-    }
+    /// <summary>刷新登录区子页（档案状态变化时调用；对齐 WPF RefreshPage）。</summary>
+    public void RefreshLogin() => _loginHost.RefreshPage();
 
     /// <summary>刷新启动按钮与版本名状态。</summary>
     public void RefreshState()
@@ -209,6 +150,10 @@ public class PageLaunchLeft : Grid
         _progress.IsVisible = false;
         _progress.Value = 0;
         var instance = InstanceList.McMcInstanceSelected;
+        var hasProfile = false;
+        try { hasProfile = PCL.Core.Minecraft.Profile.ProfileService.Current is not null; }
+        catch { /* 档案服务未就绪 */ }
+
         if (instance is null)
         {
             // 无实例：与 WPF 版一致显示「下载游戏」+ 副标题（点击提示下载页占位）
@@ -219,7 +164,8 @@ public class PageLaunchLeft : Grid
         else
         {
             _btnLaunch.Text = Lang.Text("Launch.Home.Button.Launch");
-            _btnLaunch.IsEnabled = true;
+            // 对齐 WPF RefreshButtonsUI case 3：无档案时禁用启动（登录区引导创建档案）
+            _btnLaunch.IsEnabled = hasProfile;
             _labVersion.Text = instance.Name;
         }
     }
