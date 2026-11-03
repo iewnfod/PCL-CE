@@ -22,6 +22,8 @@ public partial class MainWindow : Window
     private PageLaunchRight? _pageLaunchRight;
     private PageSelectLeft? _pageSelectLeft;
     private PageSelectRight? _pageSelectRight;
+    private PageDownloadInstall? _pageDownloadInstall;
+    private Control? _pageDownloadLeft;
     private Control? _pagePlaceholderLeft;
     private Control? _pagePlaceholderRight;
 
@@ -102,6 +104,11 @@ public partial class MainWindow : Window
         _autoLaunchDone = true;
         _ = Task.Run(async () =>
         {
+            // --launch 模式不经过实例选择页，需主动触发实例列表加载
+            Loading.LoaderFolderRun(InstanceList.mcInstanceListLoader, GameFolders.mcFolderSelected,
+                Loading.LoaderFolderRunType.RunOnUpdated, 1,
+                "versions" + System.IO.Path.DirectorySeparatorChar);
+
             // 等实例列表就绪
             for (var i = 0; i < 120; i++)
             {
@@ -141,6 +148,8 @@ public partial class MainWindow : Window
                 else _ShowLaunchHomeCore();
                 break;
             case MainTab.Download:
+                _ShowDownloadCore();
+                break;
             case MainTab.Setup:
             case MainTab.Tools:
                 _ShowPlaceholderCore(tab);
@@ -203,6 +212,24 @@ public partial class MainWindow : Window
         _pageSelectLeft.RefreshFolderList();
         _pageSelectRight.RefreshInstanceList();
         SetContent(_pageSelectLeft, _pageSelectRight);
+    }
+
+    private void _ShowDownloadCore()
+    {
+        _pageDownloadInstall ??= new PageDownloadInstall();
+        if (_pageDownloadLeft is null)
+        {
+            var left = new PageDownloadLeft(_pageDownloadInstall);
+            _pageDownloadLeft = new ScrollViewer
+            {
+                Content = left,
+                MinWidth = 250,
+                MaxWidth = 300,
+                VerticalAlignment = VerticalAlignment.Top,
+            };
+        }
+        _pageDownloadInstall.RebuildVersionCards();
+        SetContent(_pageDownloadLeft, _pageDownloadInstall);
     }
 
     private void _ShowPlaceholderCore(MainTab tab)

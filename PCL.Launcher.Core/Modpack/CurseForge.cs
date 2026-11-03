@@ -166,7 +166,7 @@ public static partial class Modpack
                         archiveBaseFolder,
                         overrideHome is "." or "./" ? "" : overrideHome
                     ),
-                    $@"{GameFolders.mcFolderSelected}versions\{instanceName}",
+                    System.IO.Path.Combine(GameFolders.mcFolderSelected ?? "", "versions", instanceName),
                     task,
                     0.4d);
             })
@@ -311,7 +311,7 @@ public static partial class Modpack
             fileList.Add(
                 id,
                 file.ToNetFile(
-                    $@"{GameFolders.mcFolderSelected}versions\{instanceName}\{targetFolder}\",
+                    System.IO.Path.Combine(GameFolders.mcFolderSelected ?? "", "versions", instanceName, targetFolder) + System.IO.Path.DirectorySeparatorChar,
                     Comp.DownloadReason.ModPack,
                     json["minecraft"]!["version"]!.ToString(),
                     modLoader));
@@ -350,7 +350,7 @@ public static partial class Modpack
         return new McInstallRequest
         {
             targetInstanceName = instanceName,
-            targetInstanceFolder = $@"{GameFolders.mcFolderSelected}versions\{instanceName}\",
+            targetInstanceFolder = System.IO.Path.Combine(GameFolders.mcFolderSelected ?? "", "versions", instanceName) + System.IO.Path.DirectorySeparatorChar,
             minecraftName = json["minecraft"]!["version"]!.ToString(),
             forgeVersion = loaderVersions.ForgeVersion,
             neoForgeVersion = loaderVersions.NeoForgeVersion,

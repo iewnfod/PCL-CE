@@ -93,7 +93,9 @@ public class HostConnectionHandler
             cancellationSource.Cancel();
             _ = _CleanupUnusedConnectionsAsync(connectionTasks, null).ConfigureAwait(false);
 
-            LogWrapper.Error(ex, ModuleName, $"All connection attempts failed for {host}");
+            // 预期失败路径：上层（loader/请求方）会捕获抛出的 HttpRequestException 转为任务 Failed；
+            // 用 Error 级别会触发全局错误弹窗，造成一次失败双重报告，故仅记调试日志
+            LogWrapper.Debug(ex, ModuleName, $"All connection attempts failed for {host}");
             throw new HttpRequestException($"Connection failed for {host}", ex);
         }
         finally

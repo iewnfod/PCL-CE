@@ -35,7 +35,7 @@ public static partial class Modpack
         instanceName = _ResolveModpackInstanceName(instanceName, json["name"]?.ToString() ?? "");
 
         var installTemp = LauncherCommon.GetTempFolder("Modpack");
-        var versionFolder = $"{GameFolders.mcFolderSelected}versions\\{instanceName}";
+        var versionFolder = System.IO.Path.Combine(GameFolders.mcFolderSelected ?? "", "versions", instanceName);
         var installLoaders = new List<LoaderBase>
         {
             _CreateMcbbsExtractLoader(
@@ -67,7 +67,7 @@ public static partial class Modpack
         var request = new McInstallRequest
         {
             targetInstanceName = instanceName,
-            targetInstanceFolder = $@"{GameFolders.mcFolderSelected}versions\{instanceName}\",
+            targetInstanceFolder = System.IO.Path.Combine(GameFolders.mcFolderSelected ?? "", "versions", instanceName) + System.IO.Path.DirectorySeparatorChar,
             minecraftName = minecraftVersion,
             optiFineVersion = addons.GetValueOrDefault("optifine"),
             forgeVersion = addons.GetValueOrDefault("forge"),

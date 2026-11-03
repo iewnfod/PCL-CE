@@ -78,7 +78,8 @@ public static partial class Modpack
 
     private static void _ValidateModpackTargetPath(string? instanceName)
     {
-        var targetFolder = $@"{GameFolders.mcFolderSelected}versions\{instanceName}\";
+        var targetFolder = System.IO.Path.Combine(
+            GameFolders.mcFolderSelected ?? "", "versions", instanceName ?? "") + System.IO.Path.DirectorySeparatorChar;
         if (!targetFolder.Contains('!') && !targetFolder.Contains(';'))
             return;
 
@@ -281,7 +282,7 @@ public static partial class Modpack
         string source,
         string? modpackVersion)
     {
-        var versionFolder = $@"{GameFolders.mcFolderSelected}versions\{instanceName}\";
+        var versionFolder = System.IO.Path.Combine(GameFolders.mcFolderSelected ?? "", "versions", instanceName) + System.IO.Path.DirectorySeparatorChar;
         if (logo is not null && File.Exists(logo))
         {
             File.Copy(

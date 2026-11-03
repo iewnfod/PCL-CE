@@ -440,7 +440,19 @@ public static class LauncherCommon
         try
         {
             var bytes = File.ReadAllBytes(filePath);
-            return (encoding ?? EncodingDetector.DetectEncoding(bytes)).GetString(bytes);
+            if (encoding is not null) return encoding.GetString(bytes);
+            // 剥离 BOM（对齐 WPF Common.DecodeBytes）：DetectEncoding 得到的编码 GetString 不去除 BOM，
+            // 会以 U+FEFF 开头进入 JSON/INI 解析导致失败
+            if (bytes.Length >= 2)
+            {
+                if (bytes[0] == 0xEF && bytes[1] == 0xBB && bytes.Length >= 3)
+                    return Encoding.UTF8.GetString(bytes, 3, bytes.Length - 3);
+                if (bytes[0] == 0xFE && bytes[1] == 0xFF)
+                    return Encoding.BigEndianUnicode.GetString(bytes, 2, bytes.Length - 2);
+                if (bytes[0] == 0xFF && bytes[1] == 0xFE)
+                    return Encoding.Unicode.GetString(bytes, 2, bytes.Length - 2);
+            }
+            return EncodingDetector.DetectEncoding(bytes).GetString(bytes);
         }
         catch
         {
@@ -544,7 +556,9 @@ public static class LauncherCommon
     {
         var directory = Path.GetDirectoryName(filePath);
         if (!string.IsNullOrEmpty(directory)) Directory.CreateDirectory(directory);
-        File.WriteAllText(filePath, content, encoding ?? Encoding.UTF8);
+        // 对齐 WPF 版语义：默认 UTF-8 无 BOM（Encoding.UTF8 的 encoderShouldEmitUTF8Identifier 为 true，
+        // 会写入 BOM，导致后续按 JSON 解析失败）
+        File.WriteAllText(filePath, content, encoding ?? new UTF8Encoding(false));
     }
 
     public static void WriteFile(string filePath, Stream stream)

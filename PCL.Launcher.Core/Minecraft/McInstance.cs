@@ -755,8 +755,8 @@ public class McInstance
         // 检查权限
         try
         {
-            Directory.CreateDirectory(PathInstance + @"PCL\");
-            LauncherCommon.CheckPermissionWithException(PathInstance + @"PCL\");
+            Directory.CreateDirectory(System.IO.Path.Combine(PathInstance, "PCL"));
+            LauncherCommon.CheckPermissionWithException(System.IO.Path.Combine(PathInstance, "PCL"));
         }
         catch (Exception ex)
         {

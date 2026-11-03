@@ -24,6 +24,9 @@
     <ItemGroup>
         <!-- Basics.Metadata 从入口程序集读取 PCL.metadata.json 资源 -->
         <EmbeddedResource Include="metadata.json" LogicalName="PCL.metadata.json" />
+        <!-- Java 运行辅助与 Forge 安装器 wrapper（LauncherCommon.GetResourceStream 按 "Resources/..." 读取） -->
+        <EmbeddedResource Include="..\Plain Craft Launcher 2\Resources\java-wrapper.jar" Link="Resources\java-wrapper.jar" />
+        <EmbeddedResource Include="..\Plain Craft Launcher 2\Resources\forge-installer.jar" Link="Resources\forge-installer.jar" />
         <!-- 语言 XAML 作为资源打包，供 AvaloniaLocalizationBackend 解析 -->
         <EmbeddedResource Include="..\PCL.Core.Wpf\App\Localization\Languages\zh-CN.xaml" Link="Languages\zh-CN.xaml" />
         <!-- SVG 图标包与 WPF 版共享同一份源文件（PCL.Avalonia/Controls/SvgIcon 渲染） -->

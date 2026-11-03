@@ -8,6 +8,8 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Threading;
 using PCL.Avalonia.Controls;
+using PCL.Core.App.Configuration;
+using PCL.Core.App.Configuration.Storage;
 using PCL.Core.App.Localization;
 
 namespace PCL.Avalonia.Pages;
@@ -378,12 +380,7 @@ public class PageSelectRight : Grid
 
         var btnDelete = new MyIconButton { SvgIcon = "lucide/trash-2", LogoScale = 1.1 };
         ToolTip.SetTip(btnDelete, Lang.Text("Common.Action.Delete"));
-        btnDelete.Click += (_, _) =>
-            global::PCL.Core.UI.Hints.HintService.Show(new()
-            {
-                Message = "删除实例将在后续版本提供（MVP 占位）",
-                Kind = global::PCL.Core.UI.Hints.HintKind.Info,
-            });
+        btnDelete.Click += (_, _) => _ = _DeleteInstanceAsync(instance);
 
         var btnSettings = new MyIconButton { SvgIcon = "lucide/settings", LogoScale = 1.1 };
         ToolTip.SetTip(btnSettings, Lang.Text("Select.Instance.Settings"));
@@ -398,5 +395,41 @@ public class PageSelectRight : Grid
             ? [btnStar, btnOpen, btnDelete, btnSettings]
             : [btnStar, btnOpen, btnDelete];
         return item;
+    }
+
+    /// <summary>删除实例（对齐 WPF PageInstanceOverall 删除逻辑；Linux MVP 无回收站，永久删除）。</summary>
+    private static async Task _DeleteInstanceAsync(McInstance instance)
+    {
+        var path = instance.PathInstance;
+        var choice = await MyMsgBox.ShowAsync(
+            $"是否删除实例 {instance.Name}？\r\n{path}\r\n\r\n该实例将被永久删除，此操作无法撤销！（Linux 版暂不支持移入回收站）",
+            Lang.Text("Common.Action.Delete"),
+            [Lang.Text("Common.Action.Delete"), Lang.Text("Common.Action.Cancel")],
+            isWarn: true);
+        if (choice != 1) return;
+
+        await Task.Run(() =>
+        {
+            try
+            {
+                LauncherCommon.IniClearCache(System.IO.Path.Combine(path, "options.txt"));
+                ((DynamicCacheConfigStorage)ConfigService.GetProvider(ConfigSource.GameInstance))
+                    .InvalidateCache(path);
+                LauncherCommon.DeleteDirectory(path);
+                global::PCL.Core.Logging.LogWrapper.Info("[Minecraft] 已删除实例：" + path);
+            }
+            catch (Exception ex)
+            {
+                global::PCL.Core.Logging.LogWrapper.Error(ex, "删除实例失败：" + path);
+                global::PCL.Core.UI.Hints.HintService.Show(new()
+                {
+                    Message = $"删除实例失败：{ex.Message}",
+                    Kind = global::PCL.Core.UI.Hints.HintKind.Error,
+                });
+            }
+        });
+
+        Loading.LoaderFolderRun(InstanceList.mcInstanceListLoader, GameFolders.mcFolderSelected,
+            Loading.LoaderFolderRunType.ForceRun, 1, "versions" + System.IO.Path.DirectorySeparatorChar);
     }
 }

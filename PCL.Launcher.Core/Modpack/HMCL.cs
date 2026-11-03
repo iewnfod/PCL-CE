@@ -25,7 +25,7 @@ public static partial class Modpack
         var request = new McInstallRequest
         {
             targetInstanceName = instanceName,
-            targetInstanceFolder = $@"{GameFolders.mcFolderSelected}versions\{instanceName}\",
+            targetInstanceFolder = System.IO.Path.Combine(GameFolders.mcFolderSelected ?? "", "versions", instanceName) + System.IO.Path.DirectorySeparatorChar,
             minecraftName = json["gameVersion"]!.ToString()
         };
         var mergeLoaders = ModpackUi.CreateInstallLoader(request);

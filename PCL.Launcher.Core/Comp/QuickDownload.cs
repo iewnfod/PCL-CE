@@ -143,7 +143,7 @@ public static partial class Comp
                 GameFolders.mcFolderSelected,
                 Loading.LoaderFolderRunType.ForceRun,
                 1,
-                "versions\\",
+                "versions" + System.IO.Path.DirectorySeparatorChar,
                 true);
         }
 
