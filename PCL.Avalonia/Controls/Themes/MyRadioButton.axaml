@@ -15,6 +15,13 @@
                             Background="{DynamicResource ColorBrushSemiTransparent}"
                             HorizontalAlignment="Center" VerticalAlignment="Center">
                         <StackPanel Orientation="Horizontal">
+                            <Border x:Name="PART_Dot" Width="14" Height="14" CornerRadius="7"
+                                    BorderThickness="1.5" IsVisible="False" IsHitTestVisible="False"
+                                    VerticalAlignment="Center" Margin="2,0,0,0">
+                                <Ellipse x:Name="PART_DotInner" Width="6" Height="6" IsVisible="False"
+                                         Fill="{DynamicResource ColorBrush3}"
+                                         HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
                             <Panel x:Name="PART_LogoHost" Width="16" Height="16" Margin="12,0,0,0"
                                    VerticalAlignment="Center" RenderTransformOrigin="50%, 50%">
                                 <controls:SvgIcon x:Name="PART_Icon" Width="16" Height="16" />
@@ -89,6 +96,31 @@
             </Style>
             <Style Selector="^[ColorType=Highlight]:checked /template/ controls|SvgIcon#PART_Icon">
                 <Setter Property="IconBrush" Value="White" />
+            </Style>
+
+            <!-- ===== ColorType=RadioBox（页面圆点单选，1:1 复刻 WPF MyRadioBox） ===== -->
+            <Style Selector="^[ColorType=RadioBox] /template/ Border#PART_Back">
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="MinHeight" Value="22" />
+                <Setter Property="MaxHeight" Value="22" />
+                <Setter Property="CornerRadius" Value="0" />
+                <Setter Property="HorizontalAlignment" Value="Stretch" />
+            </Style>
+            <Style Selector="^[ColorType=RadioBox] /template/ TextBlock#PART_Text">
+                <Setter Property="Foreground" Value="{DynamicResource ColorBrushMemory}" />
+            </Style>
+            <Style Selector="^[ColorType=RadioBox] /template/ Border#PART_Dot">
+                <Setter Property="IsVisible" Value="True" />
+                <Setter Property="BorderBrush" Value="{DynamicResource ColorBrushGray5}" />
+            </Style>
+            <Style Selector="^[ColorType=RadioBox]:pointerover /template/ Border#PART_Dot">
+                <Setter Property="BorderBrush" Value="{DynamicResource ColorBrush3}" />
+            </Style>
+            <Style Selector="^[ColorType=RadioBox]:checked /template/ Border#PART_Dot">
+                <Setter Property="BorderBrush" Value="{DynamicResource ColorBrush3}" />
+            </Style>
+            <Style Selector="^[ColorType=RadioBox]:checked /template/ Ellipse#PART_DotInner">
+                <Setter Property="IsVisible" Value="True" />
             </Style>
         </ControlTheme>
     </Styles.Resources>

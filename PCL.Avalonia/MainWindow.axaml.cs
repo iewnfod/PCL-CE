@@ -11,6 +11,7 @@ using Avalonia.Threading;
 using PCL.Avalonia.Controls;
 using PCL.Avalonia.Pages;
 using PCL.Avalonia.Platform;
+using PCL.Core.App;
 using PCL.Core.App.IoC;
 using PCL.Core.App.Localization;
 
@@ -26,6 +27,14 @@ public partial class MainWindow : Window
     private Control? _pageDownloadLeft;
     private Control? _pagePlaceholderLeft;
     private Control? _pagePlaceholderRight;
+
+    // 设置页（任务 8：真实左栏导航 + 子页缓存）
+    private PageSetupLeft? _pageSetupLeft;
+    private PageSetupLaunch? _pageSetupLaunch;
+    private PageSetupJava? _pageSetupJava;
+    private PageSetupManage? _pageSetupManage;
+    private PageSetupAppearance? _pageSetupAppearance;
+    private Control? _pageSetupLeftHost;
 
     private MainTab _tab = MainTab.Launch;
     private bool _launchSubSelect;
@@ -60,6 +69,7 @@ public partial class MainWindow : Window
         _HookNavButton("BtnTitleSelect3", MainTab.Tools);
 
         // 默认落在启动主页（PCL_NAV=select/download/setup/tools 直开对应页，供自动化验证）
+        _ApplySetupHook(); // PCL_SETUP_APPLY 一次性设置钩子（在页面构造前应用）
         switch (Environment.GetEnvironmentVariable("PCL_NAV"))
         {
             case "select":
@@ -151,6 +161,8 @@ public partial class MainWindow : Window
                 _ShowDownloadCore();
                 break;
             case MainTab.Setup:
+                _ShowSetupCore();
+                break;
             case MainTab.Tools:
                 _ShowPlaceholderCore(tab);
                 break;
@@ -231,6 +243,132 @@ public partial class MainWindow : Window
         _pageDownloadInstall.RebuildVersionCards();
         SetContent(_pageDownloadLeft, _pageDownloadInstall);
     }
+
+    #region 设置页（任务 8：PageSetup 子集——Java/内存/下载源/主题/启动器行为）
+
+    /// <summary>PCL_SETUP_APPLY 一次性设置钩子（自动化验证）：mode/ram/initial/light/dark/colormode/filesource/versionsource/visibility/java=值，逗号分隔。</summary>
+    private static void _ApplySetupHook()
+    {
+        var spec = Environment.GetEnvironmentVariable("PCL_SETUP_APPLY");
+        if (string.IsNullOrWhiteSpace(spec)) return;
+        foreach (var pair in spec.Split(',', ';'))
+        {
+            var kv = pair.Split('=', 2);
+            if (kv.Length != 2 || !int.TryParse(kv[1].Trim(), out var num)) continue;
+            switch (kv[0].Trim().ToLowerInvariant())
+            {
+                case "mode":
+                    Config.Launch.MemoryAllocationMode = num;
+                    break;
+                case "ram":
+                    Config.Launch.CustomMemorySize = num;
+                    break;
+                case "initial":
+                    Config.Launch.CustomInitialMemorySize = num;
+                    break;
+                case "light":
+                    Config.Preference.Theme.LightColor = (ColorTheme)num;
+                    break;
+                case "dark":
+                    Config.Preference.Theme.DarkColor = (ColorTheme)num;
+                    break;
+                case "colormode":
+                    Config.Preference.Theme.ColorMode = (ColorMode)num;
+                    break;
+                case "filesource":
+                    Config.Download.FileSource = num;
+                    break;
+                case "versionsource":
+                    Config.Download.VersionListSource = num;
+                    break;
+                case "visibility":
+                    Config.Launch.LauncherVisibility = (LauncherVisibility)num;
+                    break;
+            }
+        }
+        Console.WriteLine($"[Setup] PCL_SETUP_APPLY 已应用：{spec}");
+        Console.WriteLine($"[Setup] 验证读回：mode={Config.Launch.MemoryAllocationMode} ram={Config.Launch.CustomMemorySize} "
+            + $"light={Config.Preference.Theme.LightColor} filesource={Config.Download.FileSource}");
+    }
+
+    private void _ShowSetupCore()
+    {
+        if (_pageSetupLeft is null)
+        {
+            _pageSetupLeft = new PageSetupLeft();
+            _pageSetupLeft.PageSelected += page => _ShowSetupPage(page);
+            _pageSetupLeftHost = new ScrollViewer
+            {
+                Content = _pageSetupLeft,
+                MinWidth = 250,
+                MaxWidth = 300,
+                VerticalAlignment = VerticalAlignment.Top,
+            };
+        }
+        // 默认落在「启动」子页；PCL_SETUP_PAGE 直达（供自动化验证）
+        var initial = Environment.GetEnvironmentVariable("PCL_SETUP_PAGE") switch
+        {
+            "java" => SetupPage.Java,
+            "manage" or "download" => SetupPage.Manage,
+            "appearance" or "ui" => SetupPage.Appearance,
+            "language" => SetupPage.Language,
+            "misc" => SetupPage.Misc,
+            _ => SetupPage.Launch,
+        };
+        _pageSetupLeft.Select(initial);
+        _ShowSetupPage(initial);
+    }
+
+    private void _ShowSetupPage(SetupPage page)
+    {
+        Control right = page switch
+        {
+            SetupPage.Launch => _pageSetupLaunch ??= new PageSetupLaunch(),
+            SetupPage.Java => _pageSetupJava ??= new PageSetupJava(),
+            SetupPage.Manage => _pageSetupManage ??= new PageSetupManage(),
+            SetupPage.Appearance => _pageSetupAppearance ??= new PageSetupAppearance(),
+            _ => _SetupPlaceholderCard(page),
+        };
+        SetContent(_pageSetupLeftHost!, right);
+    }
+
+    /// <summary>未实现子页的占位卡（文案对照 WPF 导航项）。</summary>
+    private Control _SetupPlaceholderCard(SetupPage page)
+    {
+        var title = page switch
+        {
+            SetupPage.GameLink => Lang.Text("Setup.Left.Item.GameLink"),
+            SetupPage.Language => Lang.Text("Setup.Language.Title"),
+            SetupPage.Misc => Lang.Text("Setup.Left.Item.Misc"),
+            SetupPage.About => Lang.Text("Setup.Left.Item.About"),
+            SetupPage.Update => Lang.Text("Setup.Left.Item.Update"),
+            SetupPage.Feedback => Lang.Text("Setup.Left.Item.Feedback"),
+            _ => Lang.Text("Setup.Left.Item.Log"),
+        };
+        var card = new MyCard
+        {
+            Margin = new Thickness(40),
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            Title = title,
+        };
+        card.Content = new StackPanel
+        {
+            Margin = new Thickness(20, 4, 20, 18),
+            Children =
+            {
+                new TextBlock
+                {
+                    Text = "该页面将在后续版本提供（MVP 占位）",
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    Margin = new Thickness(0, 6, 0, 0),
+                },
+            },
+        };
+        return card;
+    }
+
+    #endregion
 
     private void _ShowPlaceholderCore(MainTab tab)
     {

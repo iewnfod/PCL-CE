@@ -43,10 +43,29 @@ public class FileConfigStorage : ConfigStorage
             {
                 while (!cancelToken.IsCancellationRequested)
                 {
-                    // 读入并合并暂存操作
-                    var (key, action) = await reader.ReadAsync(cancelToken);
-                    writeActionMap[key] = action;
-                    if (Environment.TickCount64 - lastSyncTick < syncInterval || cancelToken.IsCancellationRequested) continue;
+                    // 距上次同步不足 10s：带超时等待（窗口期满立即同步，避免通道空闲时攒批永不落盘）
+                    var remaining = syncInterval - (Environment.TickCount64 - lastSyncTick);
+                    if (remaining > 0)
+                    {
+                        using var windowCts = CancellationTokenSource.CreateLinkedTokenSource(cancelToken);
+                        windowCts.CancelAfter(TimeSpan.FromMilliseconds(remaining + 20));
+                        try
+                        {
+                            var (pendingKey, pendingAction) = await reader.ReadAsync(windowCts.Token);
+                            writeActionMap[pendingKey] = pendingAction;
+                            continue;
+                        }
+                        catch (OperationCanceledException) when (!cancelToken.IsCancellationRequested)
+                        {
+                            // 合并窗口到期 → 落入下方同步
+                        }
+                    }
+                    else
+                    {
+                        // 读入并合并暂存操作
+                        var (key, action) = await reader.ReadAsync(cancelToken);
+                        writeActionMap[key] = action;
+                    }
                     // 同步文件
                     Sync();
                     lastSyncTick = Environment.TickCount64;

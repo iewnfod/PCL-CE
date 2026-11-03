@@ -14,7 +14,9 @@ namespace PCL.Avalonia.Controls;
 public enum MyRadioButtonColorType
 {
     White,
-    Highlight
+    Highlight,
+    /// <summary>页面圆点单选（WPF MyRadioBox）：透明底、14px 圆环 + 选中内点。</summary>
+    RadioBox
 }
 
 /// <summary>

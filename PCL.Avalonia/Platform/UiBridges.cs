@@ -36,7 +36,7 @@ internal static class UiBridges
         LoginProfile.Current = new OfflineProfileUi("Player");
         WatcherUi.Current = new AvaloniaWatcherUi();
         MediaService.Current = new NoopMediaService();
-        MemorySettings.Current = new DefaultMemorySettings();
+        MemorySettings.Current = new AvaloniaMemorySettings();
         LogFilter.Current = new PassThroughLogFilter();
         RestrictedFeatures.Current = new UnrestrictedFeatures();
         LoadingUi.Current = new NoopLoadingUi();
@@ -205,20 +205,6 @@ internal sealed class NoopMediaService : IMediaService
     public void PauseMusic() { }
     public void ResumeMusic() { }
     public void SetVideoGaming(bool gaming) { }
-}
-
-/// <summary>内存分配：默认策略（总内存的 40%，上限 8G，下限 1G，32 位 Java 上限 1G）。</summary>
-internal sealed class DefaultMemorySettings : IMemorySettings
-{
-    public double GetRam(McInstance version, bool? is32BitJava = null)
-    {
-        var totalGb = KernelInterop.GetPhysicalMemoryBytes().Total / 1024.0 / 1024 / 1024;
-        var ram = Math.Clamp(totalGb * 0.4, 1, 8);
-        if (is32BitJava == true) ram = Math.Min(ram, 1);
-        return Math.Floor(ram * 10) / 10;
-    }
-
-    public double? GetInitialRam(McInstance version, bool? is32BitJava = null) => null;
 }
 
 internal sealed class PassThroughLogFilter : ILogFilter

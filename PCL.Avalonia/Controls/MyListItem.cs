@@ -477,6 +477,10 @@ public class MyListItem : TemplatedControl
         if (_tagsHost is null) return;
         _tagsHost.Children.Clear();
 
+        // 标签横排（Panel 直加会堆叠在同一位置）
+        var stack = new StackPanel { Orientation = global::Avalonia.Layout.Orientation.Horizontal };
+        _tagsHost.Children.Add(stack);
+
         IEnumerable<string>? keys = null;
         if (Tags is string str) keys = str.Split('|');
         else if (Tags is IEnumerable<string> list) keys = list;
@@ -485,20 +489,19 @@ public class MyListItem : TemplatedControl
             foreach (var key in keys.Where(k => !string.IsNullOrWhiteSpace(k)).Distinct())
             {
                 var text = global::PCL.Core.App.Localization.Lang.Text(key);
-                if (!string.IsNullOrEmpty(text)) _AddTagBubble(text);
+                if (!string.IsNullOrEmpty(text)) _AddTagBubble(stack, text);
             }
         }
         else if (PlainTags is not null)
         {
             foreach (var text in PlainTags.Where(t => !string.IsNullOrWhiteSpace(t)))
-                _AddTagBubble(text);
+                _AddTagBubble(stack, text);
         }
     }
 
-    private void _AddTagBubble(string text)
+    private void _AddTagBubble(StackPanel stack, string text)
     {
-        if (_tagsHost is null) return;
-        _tagsHost.Children.Add(new Border
+        stack.Children.Add(new Border
         {
             Background = new ImmutableSolidColorBrush(Color.FromArgb(17, 0, 0, 0)),
             Padding = new Thickness(3, 1),
@@ -511,7 +514,7 @@ public class MyListItem : TemplatedControl
                 Foreground = new ImmutableSolidColorBrush(Color.FromRgb(134, 134, 134))
             }
         });
-        _tagsHost.IsVisible = _tagsHost.Children.Count > 0;
+        _tagsHost!.IsVisible = stack.Children.Count > 0;
     }
 
     #endregion
