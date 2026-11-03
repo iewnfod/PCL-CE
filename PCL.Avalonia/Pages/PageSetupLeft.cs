@@ -87,6 +87,7 @@ public class PageSetupLeft : StackPanel
         item.Click += (sender, _) =>
         {
             if (sender is MyListItem self && !self.Checked) self.Checked = true;
+            Select(page);
             PageSelected?.Invoke(page);
         };
         _items[page] = item;

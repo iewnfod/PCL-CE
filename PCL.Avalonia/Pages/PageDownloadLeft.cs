@@ -13,6 +13,7 @@ namespace PCL.Avalonia.Pages;
 public class PageDownloadLeft : StackPanel
 {
     private readonly PageDownloadInstall _installPage;
+    private readonly List<MyListItem> _navItems = [];
     private MyIconButton? _btnRefresh;
 
     public PageDownloadLeft(PageDownloadInstall installPage)
@@ -91,9 +92,14 @@ public class PageDownloadLeft : StackPanel
         item.Click += (sender, _) =>
         {
             if (sender is MyListItem self && !self.Checked) self.Checked = true;
+            // 导航互斥：取消其他项的选中态（竖条/高亮随之消失）
+            foreach (var other in _navItems)
+                if (!ReferenceEquals(other, sender) && other.Checked)
+                    other.SetChecked(false, false, false);
             onClick();
         };
         if (@checked) item.Checked = true;
+        _navItems.Add(item);
         Children.Add(item);
     }
 }

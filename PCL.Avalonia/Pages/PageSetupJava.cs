@@ -48,12 +48,12 @@ public class PageSetupJava : Grid
             },
         };
 
-        // 添加卡（对齐 WPF：独立卡片、图标 + 文字的轻量按钮行）
+        // 添加卡（对齐 WPF：独立紧凑卡片、图标 + 文字的轻量按钮行；无标题卡高 ≈40px）
         var cardAdd = new MyCard { Margin = new Thickness(0, 0, 0, 15) };
         var panAdd = new StackPanel
         {
             Orientation = Orientation.Horizontal,
-            Margin = new Thickness(25, 10, 25, 10),
+            Margin = new Thickness(20, 7, 20, 7),
         };
         panAdd.Children.Add(_IconTextButton(
             "lucide/folder-plus", Lang.Text("Setup.Java.Add"), 0, 24, _AddJava));
@@ -77,13 +77,14 @@ public class PageSetupJava : Grid
     /// <summary>图标 + 文字的轻量按钮行（对齐 WPF MyIconTextButton 视觉：无边框、悬停高亮）。</summary>
     private static Control _IconTextButton(string icon, string text, double marginLeft, double marginRight, Action onClick)
     {
-        var btnIcon = new MyIconButton { SvgIcon = icon, LogoScale = 0.95 };
+        var btnIcon = new SvgIcon { Icon = icon, Width = 20, Height = 20, VerticalAlignment = VerticalAlignment.Center };
+        btnIcon.SetDynamic(SvgIcon.IconBrushProperty, "ColorBrush4");
         var label = new TextBlock
         {
             Text = text,
             FontSize = 13,
             VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(6, 0, 0, 0),
+            Margin = new Thickness(7, 0, 0, 0),
         };
         label.SetDynamic(TextBlock.ForegroundProperty, "ColorBrushMemory");
         var host = new StackPanel

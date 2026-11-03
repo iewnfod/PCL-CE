@@ -24,7 +24,7 @@ public class MyCard : ContentControl
     public const double SwapedHeight = 40;
 
     public static readonly StyledProperty<string?> TitleProperty =
-        AvaloniaProperty.Register<MyCard, string?>(nameof(Title));
+        AvaloniaProperty.Register<MyCard, string?>(nameof(Title), "");
 
     public static readonly StyledProperty<bool> CanSwapProperty =
         AvaloniaProperty.Register<MyCard, bool>(nameof(CanSwap));
@@ -38,7 +38,8 @@ public class MyCard : ContentControl
     public string? Title
     {
         get => GetValue(TitleProperty);
-        set => SetValue(TitleProperty, value);
+        // null 归一为空串：无标题卡由模板样式收起标题行
+        set => SetValue(TitleProperty, string.IsNullOrEmpty(value) ? "" : value);
     }
 
     /// <summary>是否允许点击标题区折叠。</summary>
@@ -66,6 +67,8 @@ public class MyCard : ContentControl
         base.OnApplyTemplate(e);
         if (e.NameScope.Find<Border>("PART_Header") is { } header)
         {
+            // 无标题卡：标题行收起（local value，确保覆盖模板默认 40px）
+            if (string.IsNullOrEmpty(Title)) header.Height = 0;
             header.PointerPressed += HeaderOnPointerPressed;
             header.PointerReleased += HeaderOnPointerReleased;
             header.Cursor = new Cursor(StandardCursorType.Hand);

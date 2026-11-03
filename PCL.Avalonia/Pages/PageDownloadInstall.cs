@@ -28,7 +28,7 @@ public class PageDownloadInstall : Grid
         HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
     };
 
-    private readonly StackPanel _panMinecraft = new() { Margin = new Thickness(25, 2, 25, 10) };
+    private readonly StackPanel _panMinecraft = new() { Margin = new Thickness(25, 25, 25, 25) };
     private readonly MyCard _cardLoad = new() { Margin = new Thickness(0, 0, 0, 15) };
 
     // 屏 2：选择加载器
@@ -39,7 +39,7 @@ public class PageDownloadInstall : Grid
         IsVisible = false,
     };
 
-    private readonly StackPanel _panSelect = new() { Margin = new Thickness(25, 2, 25, 10) };
+    private readonly StackPanel _panSelect = new() { Margin = new Thickness(25, 25, 25, 25) };
 
     // 选择状态
     private string? _vanillaName;

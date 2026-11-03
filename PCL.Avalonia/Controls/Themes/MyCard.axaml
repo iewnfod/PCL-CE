@@ -21,8 +21,8 @@
                         <Border CornerRadius="5" ClipToBounds="True"
                                 Background="{DynamicResource ColorBrushTransparentBackground}"
                                 BorderThickness="1" BorderBrush="#17000000">
-                            <Grid RowDefinitions="40,*">
-                                <!-- 标题行（40px 热区） -->
+                            <Grid RowDefinitions="Auto,*">
+                                <!-- 标题行（40px 热区由默认样式设；无 Title 时样式覆盖为 0） -->
                                 <Border x:Name="PART_Header" Grid.Row="0" Background="Transparent">
                                     <Panel>
                                         <TextBlock Text="{TemplateBinding Title}" FontWeight="Bold" FontSize="13"
@@ -86,6 +86,11 @@
             <!-- 折叠箭头：仅 CanSwap=true 时显示（WPF 同款） -->
             <Style Selector="^[CanSwap=True] /template/ Path#PART_Arrow">
                 <Setter Property="IsVisible" Value="True" />
+            </Style>
+
+            <!-- 标题行默认高度 40（热区）；无标题卡由代码收起（OnApplyTemplate 置 0） -->
+            <Style Selector="^ /template/ Border#PART_Header">
+                <Setter Property="Height" Value="40" />
             </Style>
 
             <!-- 折叠态：箭头转回 0°（WPF: 270°为右向变体，默认 0°=向上），高度收为 40 -->
